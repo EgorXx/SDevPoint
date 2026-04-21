@@ -28,4 +28,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified;
+
+    @OneToOne(mappedBy = "user")
+    EmailVerification emailVerification;
 }

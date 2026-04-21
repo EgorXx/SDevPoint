@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение почты</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, sans-serif; color:#1f2937;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f6f8; margin:0; padding:32px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,0.08);">
+                <tr>
+                    <td style="padding:32px 40px; background-color:#111827;">
+                        <h1 style="margin:0; font-size:24px; line-height:1.3; color:#ffffff;" th:text="${appName}">My App</h1>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:40px;">
+                        <h2 style="margin:0 0 16px; font-size:22px; line-height:1.4; color:#111827;">
+                            Подтверждение электронной почты
+                        </h2>
+
+                        <p style="margin:0 0 16px; font-size:16px; line-height:1.6; color:#374151;">
+                            Здравствуйте,
+                            <span th:text="${username}">пользователь</span>.
+                        </p>
+
+                        <p style="margin:0 0 24px; font-size:16px; line-height:1.6; color:#374151;">
+                            Для завершения регистрации и активации аккаунта подтвердите адрес электронной почты.
+                        </p>
+
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+                            <tr>
+                                <td align="center" bgcolor="#2563eb" style="border-radius:8px;">
+                                    <a th:href="${confirmationLink}"
+                                       href="#"
+                                       style="display:inline-block; padding:14px 28px; font-size:16px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px;">
+                                        Подтвердить почту
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:0 0 12px; font-size:14px; line-height:1.6; color:#6b7280;">
+                            Если кнопка не работает, перейдите по ссылке:
+                        </p>
+
+                        <p style="margin:0 0 24px; font-size:14px; line-height:1.6; word-break:break-all;">
+                            <a th:href="${confirmationLink}"
+                               th:text="${confirmationLink}"
+                               href="#"
+                               style="color:#2563eb; text-decoration:none;">
+                                confirmation link
+                            </a>
+                        </p>
+
+                        <p style="margin:0; font-size:14px; line-height:1.6; color:#6b7280;">
+                            Ссылка действует до
+                            <span th:text="${expiresAt}">2026-04-16 18:00 UTC</span>.
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:24px 40px; background-color:#f9fafb; border-top:1px solid #e5e7eb;">
+                        <p style="margin:0; font-size:12px; line-height:1.6; color:#9ca3af;">
+                            Если вы не создавали аккаунт, просто проигнорируйте это письмо.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
