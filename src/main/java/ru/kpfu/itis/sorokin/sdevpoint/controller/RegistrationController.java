@@ -17,7 +17,7 @@ public class RegistrationController {
 
     @PostMapping("/registration")
     public ResponseEntity<String> registration(@Valid @RequestBody UserForm userForm, HttpSession httpSession) {
-        Long userId = userService.addUser(userForm);
+        Long userId = userService.registerUser(userForm);
         httpSession.setAttribute("registerProcessUserId", userId);
 
         //TODO тут будет редирект на auth/pending

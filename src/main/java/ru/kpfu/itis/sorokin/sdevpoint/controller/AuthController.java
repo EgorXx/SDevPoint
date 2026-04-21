@@ -11,21 +11,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationResendStatus;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationStatus;
+import ru.kpfu.itis.sorokin.sdevpoint.service.EmailVerificationService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.UserService;
 
+import java.net.URI;
 import java.util.UUID;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
-    private final UserService userService;
+    private final EmailVerificationService emailVerificationService;
 
     @GetMapping("/auth/confirm")
     public ResponseEntity<String> confirmEmail(@RequestParam UUID token) {
         log.info("Received an email confirmation request: {}", token);
 
-        EmailVerificationStatus emailVerificationStatus = userService.verificationEmail(token);
+        EmailVerificationStatus emailVerificationStatus = emailVerificationService.verificationEmail(token);
 
         return switch (emailVerificationStatus) {
             case ALREADY_VERIFIED -> ResponseEntity.ok("Ваш аккаунт уже подтвержден");
@@ -40,9 +42,15 @@ public class AuthController {
     public ResponseEntity<String> resendEmailVerification(HttpSession httpSession) {
         Long userId = (Long) httpSession.getAttribute("registerProcessUserId");
 
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .location(URI.create("/login"))
+                    .build();
+        }
+
         log.info("Received an resend email verification request, userId: {}", userId);
 
-        EmailVerificationResendStatus resendStatus = userService.resendEmailVerification(userId);
+        EmailVerificationResendStatus resendStatus = emailVerificationService.resendEmailVerification(userId);
 
         return switch (resendStatus) {
             case TOO_MANY_REQUEST -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Вы отправляете слишком много запросов на отправку подтверждения, ожидайте");
@@ -51,6 +59,5 @@ public class AuthController {
             case ALREADY_VERIFIED -> ResponseEntity.ok("Ваш аккаунт успешно подтвержден");
             case null -> ResponseEntity.ok("Что-то пошло не так");
         };
-
     }
 }
