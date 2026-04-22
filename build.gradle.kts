@@ -31,6 +31,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.springframework.boot:spring-boot-starter-liquibase")
 	implementation("org.postgresql:postgresql:$postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
