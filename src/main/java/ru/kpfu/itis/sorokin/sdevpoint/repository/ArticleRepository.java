@@ -1,0 +1,23 @@
+package ru.kpfu.itis.sorokin.sdevpoint.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.Article;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface ArticleRepository extends JpaRepository<Article, Long> {
+    Optional<Article> findByContentItem(ContentItem contentItem);
+
+    @Query("""
+        SELECT a
+        FROM Article a
+        JOIN FETCH a.contentItem ci
+        WHERE ci.visibility = 'PUBLIC'
+            AND ci.contentStatus = 'PUBLISHED'
+            AND ci.itemType = 'ARTICLE'
+    """)
+    List<Article> findAllPublicPublished();
+}

@@ -1,0 +1,288 @@
+openapi: 3.0.3
+
+info:
+  title: Article API
+  version: 1.0.0
+  description: API для работы со статьями
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: Articles
+    description: Работа со статьями
+
+paths:
+  /api/articles:
+    get:
+      tags:
+        - Articles
+      operationId: getArticles
+      summary: Получение всех public статей на сайте
+      responses:
+        '200':
+          description: Список public статей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleResponse'
+
+    post:
+      tags:
+        - Articles
+      operationId: createArticle
+      summary: Создание статьи
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleCreateRequest'
+      responses:
+        '201':
+          description: Статья создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          description: Некорректные данные запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/articles/{id}:
+    get:
+      tags:
+        - Articles
+      operationId: getArticleById
+      summary: Получение конкретной статьи
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID статьи
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Статья найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '404':
+          description: Статья не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Articles
+      operationId: updateArticle
+      summary: Редактирование статьи
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID статьи
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleUpdateRequest'
+      responses:
+        '200':
+          description: Статья обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          description: Некорректные данные запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Нет прав на редактирование статьи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Статья не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Articles
+      operationId: deleteArticle
+      summary: Удаление статьи
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID статьи
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Статья удалена
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Нет прав на удаление статьи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Статья не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+
+  schemas:
+    ArticleCreateRequest:
+      type: object
+      required:
+        - title
+        - text
+        - visibility
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 256
+          example: "Название статьи"
+        text:
+          type: string
+          minLength: 1
+          example: "Текст статьи"
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+
+    ArticleUpdateRequest:
+      type: object
+      required:
+        - title
+        - text
+        - visibility
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 256
+          example: "Новое название статьи"
+        text:
+          type: string
+          minLength: 1
+          example: "Новый текст статьи"
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+
+    ArticleResponse:
+      type: object
+      required:
+        - id
+        - title
+        - text
+        - visibility
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+          description: ID статьи.
+        title:
+          type: string
+          example: "Название статьи"
+        text:
+          type: string
+          example: "Текст статьи"
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+        status:
+          $ref: '#/components/schemas/ContentStatus'
+        preview:
+          type: string
+          example: "Краткий preview статьи"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-02T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-05-02T12:10:00Z"
+
+    Visibility:
+      type: string
+      enum:
+        - PUBLIC
+        - PRIVATE
+      example: PUBLIC
+
+    ContentStatus:
+      type: string
+      enum:
+        - DRAFT
+        - PUBLISHED
+      example: PUBLISHED
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Статья не найдена"

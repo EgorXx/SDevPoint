@@ -1,16 +1,15 @@
 package ru.kpfu.itis.sorokin.sdevpoint.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationResendStatus;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationStatus;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.UserForm;
 import ru.kpfu.itis.sorokin.sdevpoint.service.EmailVerificationService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.UserService;
 
@@ -22,6 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthController {
     private final EmailVerificationService emailVerificationService;
+    private final UserService userService;
 
     @GetMapping("/auth/confirm")
     public ResponseEntity<String> confirmEmail(@RequestParam UUID token) {
@@ -59,5 +59,14 @@ public class AuthController {
             case ALREADY_VERIFIED -> ResponseEntity.ok("Ваш аккаунт успешно подтвержден");
             case null -> ResponseEntity.ok("Что-то пошло не так");
         };
+    }
+
+    @PostMapping("/registration")
+    public ResponseEntity<String> registration(@Valid @RequestBody UserForm userForm, HttpSession httpSession) {
+        Long userId = userService.registerUser(userForm);
+        httpSession.setAttribute("registerProcessUserId", userId);
+
+        //TODO тут будет редирект на auth/pending
+        return ResponseEntity.ok("Пользователь успешно зарегистрирован");
     }
 }
