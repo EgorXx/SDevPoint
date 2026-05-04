@@ -2,6 +2,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.Article;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 
@@ -20,4 +21,12 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
             AND ci.itemType = 'ARTICLE'
     """)
     List<Article> findAllPublicPublished();
+
+    @Query("""
+        SELECT a
+        FROM Article a
+        JOIN FETCH a.contentItem ci
+        WHERE a.id = :id
+    """)
+    Optional<Article> findById(@Param("id") Long id);
 }

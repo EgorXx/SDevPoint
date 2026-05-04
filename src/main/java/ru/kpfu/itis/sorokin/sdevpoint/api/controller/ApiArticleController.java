@@ -1,6 +1,5 @@
 package ru.kpfu.itis.sorokin.sdevpoint.api.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +8,6 @@ import ru.kpfu.itis.sorokin.sdevpoint.api.generated.api.ArticlesApi;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleCreateRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleUpdateRequest;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateDto;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ArticleService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CurrentUserProvider;
 

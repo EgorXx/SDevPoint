@@ -37,6 +37,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-freemarker")
 	implementation("org.postgresql:postgresql:$postgresql")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+	implementation("org.commonmark:commonmark:0.28.0")
+	implementation("org.jsoup:jsoup:1.21.2")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

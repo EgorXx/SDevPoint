@@ -8,19 +8,24 @@ import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleCreateRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleUpdateRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateDto;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditDto;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ArticleAlreadyPublished;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
+import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
+import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownTextParser;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ArticleRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.util.MarkdownTextParser;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,8 +38,13 @@ public class ArticleService {
     private final UserRepository userRepository;
     private final ContentItemRepository contentItemRepository;
     private final MarkdownTextParser markdownTextParser;
+    private final MarkdownRenderService markdownRenderService;
 
-    private static final int PREVIEW_SIZE = 10;
+    private static final int PREVIEW_SIZE = 100;
+
+    private static final DateTimeFormatter ARTICLE_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+                    .withZone(ZoneId.of("Europe/Moscow"));
 
     @Transactional
     public Long createDraft(Long userId) {
@@ -62,10 +72,7 @@ public class ArticleService {
                     throw new NotFoundException("Статья не найдена");
                 });
 
-        if (!contentItem.getOwner().getId().equals(userId)) {
-            log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
-            throw new ForbiddenException("Доступ к статье запрещен");
-        }
+        checkAccess(contentItem, userId);
 
         //Проверка, что статья уже есть, тогда ошибка и редирект на ее редактирование
         if (articleRepository.findByContentItem(contentItem).isPresent()) {
@@ -83,6 +90,7 @@ public class ArticleService {
         contentItem.setTitle(articleCreateDto.title());
         contentItem.setVisibility(articleCreateDto.visibility());
         contentItem.setPreview(extractPreview(articleCreateDto.text()));
+        contentItem.setContentStatus(ContentStatus.PUBLISHED);
 
         Article article = new Article(
                 null,
@@ -94,9 +102,73 @@ public class ArticleService {
 
     }
 
+    @Transactional(readOnly = true)
+    public ArticleView getArticleView(Long articleId, Long userId) {
+        Article article = articleRepository.findById(articleId)
+                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+
+        ContentItem contentItem = article.getContentItem();
+
+        if (contentItem.getVisibility() == Visibility.PRIVATE) {
+            checkAccess(contentItem, userId);
+        }
+
+        return new ArticleView(
+                article.getId(),
+                contentItem.getTitle(),
+                contentItem.getOwner().getUsername(),
+                markdownRenderService.renderToSafeHtml(article.getText()),
+                ARTICLE_DATE_FORMATTER.format(contentItem.getCreatedAt()),
+                ARTICLE_DATE_FORMATTER.format(contentItem.getUpdatedAt())
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ArticleEditView getArticleToEdit(Long articleId, Long userId) {
+        Article article = articleRepository.findById(articleId)
+                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+
+        ContentItem contentItem = article.getContentItem();
+
+        checkAccess(contentItem, userId);
+
+        return new ArticleEditView(
+                article.getId(),
+                contentItem.getId(),
+                contentItem.getTitle(),
+                article.getText(),
+                contentItem.getVisibility()
+        );
+    }
+
+    @Transactional
+    public void update(ArticleEditDto articleEditDto, Long userId) {
+        Article article = articleRepository.findById(articleEditDto.articleId())
+                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+
+        ContentItem contentItem = article.getContentItem();
+
+        checkAccess(contentItem, userId);
+
+        contentItem.setTitle(articleEditDto.title());
+        contentItem.setVisibility(articleEditDto.visibility());
+        contentItem.setPreview(extractPreview(articleEditDto.text()));
+
+        article.setText(articleEditDto.text());
+    }
+
+    private void checkAccess(ContentItem contentItem, Long userId) {
+        if (!contentItem.getOwner().getId().equals(userId)) {
+            log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
+            throw new ForbiddenException("Доступ к статье запрещен");
+        }
+    }
+
     private String extractPreview(String text) {
         return markdownTextParser.parse(text, PREVIEW_SIZE);
     }
+
+
 
     //------------ МЕТОДЫ ДЛЯ РАБОТЫ С REST API ------------
 
@@ -222,101 +294,4 @@ public class ArticleService {
 
         return response;
     }
-
-
-
-//    @Transactional
-//    public void create(@Validated ArticleCreateDto articleCreateDto) {
-//        User owner = userRepository.findById(articleCreateDto.userId())
-//                .orElseThrow(() -> new NotFoundException("User not found, id: " + articleCreateDto.userId()));
-//
-//        String title = articleCreateDto.title();
-//        String text = articleCreateDto.text();
-//        Instant createdAt = Instant.now();
-//        String preview = extractPreviewFromText(text);
-//        Visibility visibility = articleCreateDto.isPrivate() ? Visibility.PRIVATE : Visibility.PUBLIC;
-//
-//        ContentItem contentItem = new ContentItem(
-//                null,
-//                owner,
-//                title,
-//                ItemType.ARTICLE,
-//                Instant.now(),
-//                Instant.now(),
-//
-//        );
-//
-//        Article article = new Article(
-//                null,
-//                owner,
-//                createdAt,
-//                preview,
-//                title,
-//                text,
-//                isPrivate
-//        );
-//
-//        articleRepository.save(article);
-//    }
-//
-//    public ArticleViewDto find(Long articleId) {
-//        Article article = articleRepository.findById(articleId)
-//                .orElse(null);
-//
-//        if (article == null) {
-//            return null;
-//        }
-//
-//        return new ArticleViewDto(
-//                article.getOwner().getUsername(),
-//                article.getTitle(),
-//                article.getPreview(),
-//                article.getText(),
-//                article.getCreatedAt()
-//        );
-//    }
-//
-//    @Transactional
-//    public void update(@Validated ArticleCreateDto articleCreateDto, Long id, Long userId) {
-//        Article article = articleRepository.findById(id)
-//                .orElseThrow(() -> new NotFoundException("Article not found, id=" + id));
-//
-//        Long ownerId = article.getOwner().getId();
-//
-//        if (!ownerId.equals(userId)) {
-//            throw new ForbiddenException("Access is denied, there are no rights to edit the article, ownerId=" + ownerId + ", userId=" + userId);
-//        }
-//
-//        article.setTitle(articleCreateDto.title());
-//        article.setText(articleCreateDto.text());
-//        article.setIsPrivate(articleCreateDto.isPrivate());
-//    }
-//
-//    @Transactional
-//    public void delete(Long articleId, Long userId) {
-//        Article article = articleRepository.findById(articleId)
-//                .orElseThrow(() -> new NotFoundException("Article not found, id=" + articleId));
-//
-//        if (!article.getOwner().getId().equals(userId)) {
-//            throw new ForbiddenException(
-//                    "Access is denied to delete article, articleId=" + articleId +
-//                            ", ownerId=" + article.getOwner().getId() +
-//                            ", userId=" + userId
-//            );
-//        }
-//
-//        articleRepository.delete(article);
-//    }
-//
-//    public List<ArticleViewDto> findAll() {
-//        return articleRepository.findAll()
-//                .stream()
-//                .map(article -> new ArticleViewDto(
-//                        article.getOwner().getUsername(),
-//                        article.getTitle(),
-//                        article.getPreview(),
-//                        article.getText(),
-//                        article.getCreatedAt()
-//                )).toList();
-//    }
 }
