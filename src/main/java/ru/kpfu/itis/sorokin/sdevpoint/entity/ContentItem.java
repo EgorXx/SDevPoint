@@ -80,4 +80,10 @@ public class ContentItem {
         return DRAFT_TITLE_PREFIX + itemType.name().toLowerCase() + "_" + UUID.randomUUID();
     }
 
+    public static boolean isGenerateTitle(String title) {
+        if (title == null) {return false;}
+
+        return title.startsWith(DRAFT_TITLE_PREFIX);
+    }
+
 }

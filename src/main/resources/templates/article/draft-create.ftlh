@@ -194,7 +194,21 @@
 
     <br>
 
-    <button type="submit">Опубликовать статью</button>
+    <div>
+        <button
+                type="submit"
+                formaction="/articles/drafts/${draftId}"
+                formmethod="post">
+            Сохранить черновик
+        </button>
+
+        <button
+                type="submit"
+                formaction="/articles/drafts/${draftId}/publish"
+                formmethod="post">
+            Опубликовать статью
+        </button>
+    </div>
 
 </form>
 

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateDto;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditDto;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ArticleView;
@@ -28,7 +29,7 @@ public class ArticleController {
     @PostMapping("/articles/drafts")
     public String createDraft(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
         Long draftId = articleService.createDraft(customUserDetails.getUserId());
-        return "redirect::/articles/drafts/" + draftId + "/edit";
+        return "redirect:/articles/drafts/" + draftId + "/edit";
     }
 
     @GetMapping("/articles/drafts/{draftId}/edit")
@@ -36,12 +37,45 @@ public class ArticleController {
             @PathVariable Long draftId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             Model model) {
-        articleService.checkDraftAccess(draftId, customUserDetails.getUserId());
+
+        ArticleCreateView articleCreateView = articleService.getArticleDraft(draftId, customUserDetails.getUserId());
+
+        ArticleCreateForm articleCreateForm = new ArticleCreateForm(
+                articleCreateView.title(),
+                articleCreateView.text(),
+                articleCreateView.visibility()
+        );
 
         model.addAttribute("draftId", draftId);
-        model.addAttribute("form", new ArticleCreateForm("", "", Visibility.PUBLIC));
+        model.addAttribute("form", articleCreateForm);
 
         return "article/draft-create";
+    }
+
+    @PostMapping("articles/drafts/{draftId}")
+    public String editArticleDraft(
+            @PathVariable("draftId") Long draftId,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @Valid @ModelAttribute("form") ArticleCreateForm articleCreateForm,
+            BindingResult bindingResult,
+            Model model
+    ) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("draftId", draftId);
+            return "article/draft-create";
+        }
+
+        ArticleCreateDto articleCreateDto = new ArticleCreateDto(
+                draftId,
+                articleCreateForm.title(),
+                articleCreateForm.text(),
+                articleCreateForm.visibility()
+        );
+
+
+        articleService.updateDraft(articleCreateDto, customUserDetails.getUserId());
+
+        return "redirect:/articles/drafts/" + draftId + "/edit";
     }
 
     @PostMapping("/articles/drafts/{draftId}/publish")
@@ -58,16 +92,15 @@ public class ArticleController {
         }
 
         ArticleCreateDto articleCreateDto = new ArticleCreateDto(
-                customUserDetails.getUserId(),
                 draftId,
                 articleCreateForm.title(),
                 articleCreateForm.text(),
                 articleCreateForm.visibility()
         );
 
-        articleService.publishDraft(articleCreateDto);
+        Long articleId = articleService.publishDraft(articleCreateDto, customUserDetails.getUserId());
 
-        return "index";
+        return "redirect:/articles/" + articleId;
     }
 
     @GetMapping("/articles/{id}")

@@ -8,6 +8,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleCreateRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleUpdateRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateDto;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditDto;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
@@ -65,41 +66,33 @@ public class ArticleService {
         return contentItem.getId();
     }
 
-    public void checkDraftAccess(Long draftId, Long userId) {
-        ContentItem contentItem = contentItemRepository.findById(draftId)
-                .orElseThrow(() -> {
-                    log.debug("ContentItem not found id={}", draftId);
-                    throw new NotFoundException("Статья не найдена");
-                });
+    @Transactional(readOnly = true)
+    public ArticleCreateView getArticleDraft(Long draftId, Long userId) {
+        ContentItem contentItem = getEditableDraft(draftId, userId);
 
-        checkAccess(contentItem, userId);
+        String text = articleRepository.findByContentItem(contentItem)
+                .map(Article::getText)
+                .orElse("");
 
-        //Проверка, что статья уже есть, тогда ошибка и редирект на ее редактирование
-        if (articleRepository.findByContentItem(contentItem).isPresent()) {
-            log.debug("Access is denied, article has already been published contentItemId={}", draftId);
-            throw new ArticleAlreadyPublished("Статья уже опубликована");
-        }
+        String title = ContentItem.isGenerateTitle(contentItem.getTitle()) ? "" : contentItem.getTitle();
+
+        return new ArticleCreateView(
+                draftId,
+                title,
+                text,
+                contentItem.getVisibility()
+        );
     }
 
     @Transactional
-    public void publishDraft(ArticleCreateDto articleCreateDto) {
-        checkDraftAccess(articleCreateDto.draftId(), articleCreateDto.userId());
+    public Long publishDraft(ArticleCreateDto articleCreateDto, Long userId) {
+        ContentItem contentItem = getEditableDraft(articleCreateDto.draftId(), userId);
 
-        ContentItem contentItem = contentItemRepository.findById(articleCreateDto.draftId()).get();
+        Article article = applyDraftData(contentItem, articleCreateDto);
 
-        contentItem.setTitle(articleCreateDto.title());
-        contentItem.setVisibility(articleCreateDto.visibility());
-        contentItem.setPreview(extractPreview(articleCreateDto.text()));
         contentItem.setContentStatus(ContentStatus.PUBLISHED);
 
-        Article article = new Article(
-                null,
-                contentItem,
-                articleCreateDto.text()
-        );
-
-        articleRepository.save(article);
-
+        return article.getId();
     }
 
     @Transactional(readOnly = true)
@@ -157,6 +150,13 @@ public class ArticleService {
         article.setText(articleEditDto.text());
     }
 
+    @Transactional
+    public void updateDraft(ArticleCreateDto articleCreateDto, Long userId) {
+        ContentItem contentItem = getEditableDraft(articleCreateDto.draftId(), userId);
+
+        applyDraftData(contentItem, articleCreateDto);
+    }
+
     private void checkAccess(ContentItem contentItem, Long userId) {
         if (!contentItem.getOwner().getId().equals(userId)) {
             log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
@@ -164,11 +164,40 @@ public class ArticleService {
         }
     }
 
+    private ContentItem getEditableDraft(Long draftId, Long userId) {
+        ContentItem contentItem = contentItemRepository.findById(draftId)
+                .orElseThrow(() -> new NotFoundException("Контент не найден"));
+
+        checkAccess(contentItem, userId);
+
+        if (contentItem.getContentStatus() == ContentStatus.PUBLISHED) {
+            log.debug("Access is denied, article has already been published contentItemId={}", contentItem.getId());
+            throw new ArticleAlreadyPublished("Статья уже опубликована");
+        }
+
+        return contentItem;
+    }
+
+    private Article applyDraftData(ContentItem contentItem, ArticleCreateDto dto) {
+        contentItem.setTitle(dto.title());
+        contentItem.setPreview(extractPreview(dto.text()));
+        contentItem.setVisibility(dto.visibility());
+
+        Article article = articleRepository.findByContentItem(contentItem)
+                .orElseGet(() -> new Article(
+                        null,
+                        contentItem,
+                        dto.text()
+                ));
+
+        article.setText(dto.text());
+
+        return articleRepository.save(article);
+    }
+
     private String extractPreview(String text) {
         return markdownTextParser.parse(text, PREVIEW_SIZE);
     }
-
-
 
     //------------ МЕТОДЫ ДЛЯ РАБОТЫ С REST API ------------
 
