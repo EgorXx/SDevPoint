@@ -170,9 +170,10 @@ public class ArticleService {
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        Page<ContentItem> contentItems = contentItemRepository.findContentItemsByContentStatusAndItemType(
+        Page<ContentItem> contentItems = contentItemRepository.findContentItemsByContentStatusAndItemTypeAndVisibility(
                 ContentStatus.PUBLISHED,
                 ItemType.ARTICLE,
+                Visibility.PUBLIC,
                 pageable
         );
 

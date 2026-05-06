@@ -8,6 +8,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.ItemType;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.*;
 import ru.kpfu.itis.sorokin.sdevpoint.web.dto.ErrorResponse;
 
@@ -60,5 +61,18 @@ public class PageExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(DraftContentAccessException.class)
+    public String handleDraftContentAccess(DraftContentAccessException e) {
+        if (e.getItemType() == ItemType.ARTICLE) {
+            return "redirect:/articles/drafts/" + e.getDraftId() + "/edit";
+        }
+
+        if (e.getItemType() == ItemType.CASE) {
+            return "redirect:/cases/drafts/" + e.getDraftId() + "/edit";
+        }
+
+        return "redirect:/";
     }
 }

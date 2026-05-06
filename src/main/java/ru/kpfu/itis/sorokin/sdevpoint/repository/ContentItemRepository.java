@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentStatus;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ItemType;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.Visibility;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +26,7 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
             """)
     Optional<ContentItem> findDraftByUserIdAndItemType(@Param("userId") Long userId, @Param("itemType") ItemType itemType);
 
-    Page<ContentItem> findContentItemsByContentStatusAndItemType(ContentStatus contentStatus, ItemType itemType, Pageable pageable);
+    Page<ContentItem> findContentItemsByContentStatusAndItemTypeAndVisibility(ContentStatus contentStatus, ItemType itemType, Visibility visibility, Pageable pageable);
 
     @Query("""
         SELECT c

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
@@ -91,7 +92,7 @@ public class CaseService {
     public Long publishDraft(CaseCreateDto caseCreateDto, Long userId) {
         ContentItem contentItem = getEditableDraft(caseCreateDto.draftId(), userId);
 
-        Case caseEntity = applyDraftData(contentItem, caseCreateDto);
+        applyDraftData(contentItem, caseCreateDto);
 
         contentItem.setContentStatus(ContentStatus.PUBLISHED);
 
@@ -219,11 +220,16 @@ public class CaseService {
         int safePage = Math.max(0, page);
         int safeSize = Math.clamp(size, 1, 50);
 
-        Pageable pageable = PageRequest.of(safePage, safeSize);
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
 
-        Page<ContentItem> contentItems = contentItemRepository.findContentItemsByContentStatusAndItemType(
+        Page<ContentItem> contentItems = contentItemRepository.findContentItemsByContentStatusAndItemTypeAndVisibility(
                 ContentStatus.PUBLISHED,
                 ItemType.CASE,
+                Visibility.PUBLIC,
                 pageable
         );
 
