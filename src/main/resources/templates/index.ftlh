@@ -22,5 +22,13 @@
     <button type="submit">Создать статью</button>
 </form>
 
+<form method="post" action="/cases/drafts">
+    <#if _csrf??>
+        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+    </#if>
+
+    <button type="submit">Создать кейс</button>
+</form>
+
 </body>
 </html>

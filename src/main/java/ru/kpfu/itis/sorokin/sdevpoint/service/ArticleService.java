@@ -8,9 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleCreateRequest;
-import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleResponse;
-import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ArticleUpdateRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ArticleAlreadyPublished;
@@ -24,9 +21,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -39,22 +34,16 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
     private final UserRepository userRepository;
     private final ContentItemRepository contentItemRepository;
-    private final MarkdownTextParser markdownTextParser;
+    private final ContentViewService contentViewService;
     private final MarkdownRenderService markdownRenderService;
 
-    private static final int PREVIEW_SIZE = 100;
-
-    private static final DateTimeFormatter ARTICLE_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
-                    .withZone(ZoneId.of("Europe/Moscow"));
-
     @Transactional
-    public Long createDraft(Long userId) {
+    public Long getOrCreateDraft(Long userId) {
         User owner = userRepository.findById(userId)
                 .orElseThrow(CurrentUserNotFoundException::new);
 
         Optional<Long> optionalContentItemId =
-                contentItemRepository.findDraftArticleByUserId(userId)
+                contentItemRepository.findDraftByUserIdAndItemType(userId, ItemType.ARTICLE)
                         .map(ContentItem::getId);
 
         if (optionalContentItemId.isPresent()) {
@@ -89,11 +78,11 @@ public class ArticleService {
     public Long publishDraft(ArticleCreateDto articleCreateDto, Long userId) {
         ContentItem contentItem = getEditableDraft(articleCreateDto.draftId(), userId);
 
-        Article article = applyDraftData(contentItem, articleCreateDto);
+        applyDraftData(contentItem, articleCreateDto);
 
         contentItem.setContentStatus(ContentStatus.PUBLISHED);
 
-        return article.getId();
+        return contentItem.getId();
     }
 
     @Transactional(readOnly = true)
@@ -108,12 +97,12 @@ public class ArticleService {
         }
 
         return new ArticleView(
-                article.getId(),
+                contentItem.getId(),
                 contentItem.getTitle(),
                 contentItem.getOwner().getUsername(),
                 markdownRenderService.renderToSafeHtml(article.getText()),
-                ARTICLE_DATE_FORMATTER.format(contentItem.getCreatedAt()),
-                ARTICLE_DATE_FORMATTER.format(contentItem.getUpdatedAt())
+                contentViewService.formatDate(contentItem.getCreatedAt()),
+                contentViewService.formatDate(contentItem.getUpdatedAt())
         );
     }
 
@@ -127,7 +116,6 @@ public class ArticleService {
         checkAccess(contentItem, userId);
 
         return new ArticleEditView(
-                article.getId(),
                 contentItem.getId(),
                 contentItem.getTitle(),
                 article.getText(),
@@ -146,7 +134,8 @@ public class ArticleService {
 
         contentItem.setTitle(articleEditDto.title());
         contentItem.setVisibility(articleEditDto.visibility());
-        contentItem.setPreview(extractPreview(articleEditDto.text()));
+        contentItem.setPreview(contentViewService.formatPreviewFromText(articleEditDto.text()));
+        contentItem.setUpdatedAt(Instant.now());
 
         article.setText(articleEditDto.text());
     }
@@ -173,7 +162,7 @@ public class ArticleService {
     @Transactional(readOnly = true)
     public ArticlePageView getPublishedArticles(int page, int size) {
         int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 50);
+        int safeSize = Math.clamp(size, 1, 50);
 
         Pageable pageable = PageRequest.of(
                 safePage,
@@ -193,7 +182,7 @@ public class ArticleService {
                         contentItem.getOwner().getUsername(),
                         contentItem.getTitle(),
                         contentItem.getPreview(),
-                        ARTICLE_DATE_FORMATTER.format(contentItem.getCreatedAt())
+                        contentViewService.formatDate(contentItem.getCreatedAt())
                 ))
                 .toList();
 
@@ -235,7 +224,7 @@ public class ArticleService {
 
     private Article applyDraftData(ContentItem contentItem, ArticleCreateDto dto) {
         contentItem.setTitle(dto.title());
-        contentItem.setPreview(extractPreview(dto.text()));
+        contentItem.setPreview(contentViewService.formatPreviewFromText(dto.text()));
         contentItem.setVisibility(dto.visibility());
 
         Article article = articleRepository.findByContentItem(contentItem)
@@ -250,9 +239,6 @@ public class ArticleService {
         return articleRepository.save(article);
     }
 
-    private String extractPreview(String text) {
-        return markdownTextParser.parse(text, PREVIEW_SIZE);
-    }
 
     //------------ МЕТОДЫ ДЛЯ РАБОТЫ С REST API ------------
 

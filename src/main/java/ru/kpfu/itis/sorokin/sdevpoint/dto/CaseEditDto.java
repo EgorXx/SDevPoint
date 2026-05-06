@@ -2,9 +2,11 @@ package ru.kpfu.itis.sorokin.sdevpoint.dto;
 
 import ru.kpfu.itis.sorokin.sdevpoint.entity.Visibility;
 
-public record ArticleEditView(
+public record CaseEditDto(
         Long contentItemId,
         String title,
-        String text,
+        String description,
+        boolean hasSolution,
+        String solution,
         Visibility visibility
 ) {}

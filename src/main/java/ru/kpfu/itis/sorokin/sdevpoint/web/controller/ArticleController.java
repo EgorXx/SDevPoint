@@ -8,8 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
-import ru.kpfu.itis.sorokin.sdevpoint.entity.ArticleView;
-import ru.kpfu.itis.sorokin.sdevpoint.entity.Visibility;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleView;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ArticleService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CustomUserDetails;
 import ru.kpfu.itis.sorokin.sdevpoint.web.form.ArticleCreateForm;
@@ -22,7 +21,7 @@ public class ArticleController {
 
     @PostMapping("/articles/drafts")
     public String createDraft(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
-        Long draftId = articleService.createDraft(customUserDetails.getUserId());
+        Long draftId = articleService.getOrCreateDraft(customUserDetails.getUserId());
         return "redirect:/articles/drafts/" + draftId + "/edit";
     }
 
@@ -92,9 +91,9 @@ public class ArticleController {
                 articleCreateForm.visibility()
         );
 
-        Long articleId = articleService.publishDraft(articleCreateDto, customUserDetails.getUserId());
+        Long contentId = articleService.publishDraft(articleCreateDto, customUserDetails.getUserId());
 
-        return "redirect:/articles/" + articleId;
+        return "redirect:/articles/" + contentId;
     }
 
     @GetMapping("/articles/{contentId}")
@@ -135,7 +134,6 @@ public class ArticleController {
                 articleEditView.visibility()
         );
 
-        model.addAttribute("articleId", articleEditView.articleId());
         model.addAttribute("contentItemId", articleEditView.contentItemId());
         model.addAttribute("form", articleEditForm);
 
@@ -157,6 +155,7 @@ public class ArticleController {
             ).contentItemId();
 
             model.addAttribute("contentItemId", contentItemId);
+            return "article/edit";
         }
 
         ArticleEditDto articleEditDto = new ArticleEditDto(

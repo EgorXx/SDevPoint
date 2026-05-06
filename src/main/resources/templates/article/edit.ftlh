@@ -32,7 +32,7 @@
     </script>
 </#if>
 
-<form id="articleEditForm" method="post" action="/articles/${articleId}">
+<form id="articleEditForm" method="post" action="/articles/${contentItemId}">
 
     <#if _csrf??>
         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
@@ -152,7 +152,7 @@
                     const formData = new FormData();
 
                     formData.append("file", blob);
-                    formData.append("contentItemId", "${contentItemId!articleId}");
+                    formData.append("contentItemId", "${contentItemId!contentItemId}");
 
                     const headers = {};
 

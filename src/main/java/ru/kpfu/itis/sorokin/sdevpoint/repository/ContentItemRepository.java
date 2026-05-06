@@ -20,10 +20,10 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
                 select c
                 from ContentItem c
                 where c.owner.id = :userId
-                  and c.itemType = 'ARTICLE'
+                  and c.itemType = :itemType
                   and c.contentStatus = 'DRAFT'
             """)
-    Optional<ContentItem> findDraftArticleByUserId(@Param("userId") Long userId);
+    Optional<ContentItem> findDraftByUserIdAndItemType(@Param("userId") Long userId, @Param("itemType") ItemType itemType);
 
     Page<ContentItem> findContentItemsByContentStatusAndItemType(ContentStatus contentStatus, ItemType itemType, Pageable pageable);
 

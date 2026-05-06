@@ -1,4 +1,4 @@
-package ru.kpfu.itis.sorokin.sdevpoint.entity;
+package ru.kpfu.itis.sorokin.sdevpoint.dto;
 
 public record ArticleView(
         Long id,

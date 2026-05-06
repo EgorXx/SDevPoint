@@ -35,6 +35,16 @@ public class PageExceptionHandler {
         return "article/edit";
     }
 
+    @ExceptionHandler(CaseAlreadyPublished.class)
+    public String handleCaseAlreadyPublished(
+            ArticleAlreadyPublished ex,
+            Model model
+    ) {
+        model.addAttribute("error", ex.getMessage());
+
+        return "case/edit";
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<String> notFound(NotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
