@@ -37,6 +37,10 @@ spring:
       max-file-size: 6MB
       max-request-size: 10MB
 
+app:
+  scheduler:
+    cleanup-drafts-cron: "0 */2 * * * * "
+
 mail:
   sender: SDevPoint
   from: ${EMAIL}

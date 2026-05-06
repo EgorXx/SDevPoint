@@ -8,10 +8,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.ArticleAlreadyPublished;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.*;
 import ru.kpfu.itis.sorokin.sdevpoint.web.dto.ErrorResponse;
 
 @ControllerAdvice
@@ -41,6 +38,11 @@ public class PageExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<String> notFound(NotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<String> forbidden(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 
     @ExceptionHandler(BadRequestException.class)

@@ -2,16 +2,15 @@ package ru.kpfu.itis.sorokin.sdevpoint.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -60,6 +59,9 @@ public class ContentItem {
     @Column(nullable = false)
     private String preview;
 
+    @OneToMany(mappedBy = "contentItem", fetch = FetchType.LAZY)
+    private List<ContentItemImage> images;
+
     public static ContentItem createDraft(User user, ItemType itemType) {
         Instant now = Instant.now();
 
@@ -72,7 +74,8 @@ public class ContentItem {
                 now,
                 ContentStatus.DRAFT,
                 Visibility.PRIVATE,
-                EMPTY_PREVIEW
+                EMPTY_PREVIEW,
+                null
         );
     }
 

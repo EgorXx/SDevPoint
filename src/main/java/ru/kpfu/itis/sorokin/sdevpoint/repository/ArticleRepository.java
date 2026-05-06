@@ -29,4 +29,12 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
         WHERE a.id = :id
     """)
     Optional<Article> findById(@Param("id") Long id);
+
+    @Query("""
+        SELECT a
+        FROM Article a
+        JOIN FETCH a.contentItem ci
+        WHERE ci.id = :contentId
+    """)
+    Optional<Article> findByContentItemId(@Param("contentId") Long contentId);
 }

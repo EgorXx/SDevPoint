@@ -6,14 +6,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateDto;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleCreateView;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditDto;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ArticleEditView;
+import org.springframework.web.bind.annotation.*;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ArticleView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.Visibility;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ArticleService;
@@ -103,15 +97,20 @@ public class ArticleController {
         return "redirect:/articles/" + articleId;
     }
 
-    @GetMapping("/articles/{id}")
+    @GetMapping("/articles/{contentId}")
     public String getArticle(
-            @PathVariable("id") Long id,
+            @PathVariable("contentId") Long contentId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             Model model
     ) {
+        Long currentUserId = customUserDetails == null
+                ? null
+                : customUserDetails.getUserId();
+
+
         ArticleView articleView = articleService.getArticleView(
-                id,
-                customUserDetails.getUserId()
+                contentId,
+                currentUserId
         );
 
         model.addAttribute("article", articleView);
@@ -119,14 +118,14 @@ public class ArticleController {
         return "article/view";
     }
 
-    @GetMapping("/articles/{id}/edit")
+    @GetMapping("/articles/{contentId}/edit")
     public String getArticleEdit(
-            @PathVariable("id") Long id,
+            @PathVariable("contentId") Long contentId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             Model model
     ) {
         ArticleEditView articleEditView = articleService.getArticleToEdit(
-                id,
+                contentId,
                 customUserDetails.getUserId()
         );
 
@@ -143,9 +142,9 @@ public class ArticleController {
         return "article/edit";
     }
 
-    @PostMapping("/articles/{id}")
+    @PostMapping("/articles/{contentId}")
     public String editArticle(
-            @PathVariable("id") Long id,
+            @PathVariable("contentId") Long contentId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @Valid @ModelAttribute("form") ArticleEditForm articleEditForm,
             BindingResult bindingResult,
@@ -153,7 +152,7 @@ public class ArticleController {
     ) {
         if (bindingResult.hasErrors()) {
             Long contentItemId = articleService.getArticleToEdit(
-                    id,
+                    contentId,
                     customUserDetails.getUserId()
             ).contentItemId();
 
@@ -161,7 +160,7 @@ public class ArticleController {
         }
 
         ArticleEditDto articleEditDto = new ArticleEditDto(
-                id,
+                contentId,
                 articleEditForm.title(),
                 articleEditForm.text(),
                 articleEditForm.visibility()
@@ -169,6 +168,30 @@ public class ArticleController {
 
         articleService.update(articleEditDto, customUserDetails.getUserId());
 
-        return "redirect:/articles/" + id;
+        return "redirect:/articles/" + contentId;
     }
+
+    @DeleteMapping("/articles/{contentId}")
+    public String deleteArticle(
+            @PathVariable("contentId") Long id,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        articleService.deleteArticle(id, customUserDetails.getUserId());
+
+        return "redirect:/articles/public";
+    }
+
+    @GetMapping("/articles/public")
+    public String getArticlesPublic(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model
+    ) {
+        ArticlePageView articlePage = articleService.getPublishedArticles(page, size);
+
+        model.addAttribute("page", articlePage);
+
+        return "article/public_list";
+    }
+
 }

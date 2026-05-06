@@ -9,4 +9,6 @@ public interface ImageStorage {
     StoredImageInfo save(MultipartFile file);
 
     byte[] get(String storageKey);
+
+    void delete(String storageKey);
 }

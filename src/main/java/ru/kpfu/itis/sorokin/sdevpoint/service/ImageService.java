@@ -102,6 +102,10 @@ public class ImageService {
         );
     }
 
+    public void deleteImage(String storageKey) {
+        imageStorage.delete(storageKey);
+    }
+
     private ValidatedImage validateUploadImage(MultipartFile file) {
         if (file.isEmpty()) {
             throw new BadRequestException("Изображение пустое");

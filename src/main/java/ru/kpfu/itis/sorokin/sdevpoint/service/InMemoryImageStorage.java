@@ -51,7 +51,22 @@ public class InMemoryImageStorage implements ImageStorage {
         try {
             return Files.readAllBytes(imagePath);
         } catch (IOException e) {
-            throw new ImageStorageException("Error loading an image");
+            throw new ImageStorageException("Error loading an image, storageKey=" + storageKey);
+        }
+    }
+
+    @Override
+    public void delete(String storageKey) {
+        Path imagePath = root.resolve(storageKey).normalize();
+
+        if (!imagePath.startsWith(root)) {
+            throw new ImageStorageException("Invalid image path");
+        }
+
+        try {
+            Files.delete(imagePath);
+        } catch (IOException e) {
+            throw new ImageStorageException("Error deleting an image, storageKey=" + storageKey);
         }
     }
 
