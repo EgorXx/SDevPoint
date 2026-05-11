@@ -17,11 +17,13 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ArticleRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.repository.FavoriteRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -32,6 +34,7 @@ public class ArticleService {
     private final UserRepository userRepository;
     private final ContentItemRepository contentItemRepository;
     private final ContentViewService contentViewService;
+    private final FavoriteRepository favoriteRepository;
     private final MarkdownRenderService markdownRenderService;
 
     @Transactional
@@ -157,7 +160,7 @@ public class ArticleService {
     }
 
     @Transactional(readOnly = true)
-    public ArticlePageView getPublishedArticles(int page, int size) {
+    public ArticlePageView getPublishedArticles(Long userId, int page, int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.clamp(size, 1, 50);
 
@@ -174,13 +177,19 @@ public class ArticleService {
                 pageable
         );
 
+        List<Long> contentIds = contentItems.map(ContentItem::getId).toList();
+
+        Set<Long> favoriteContentIds = userId == null || contentIds.isEmpty() ?
+                Set.of() : favoriteRepository.findFavoriteContentIds(userId, contentIds);
+
         List<ArticleCardView> articleCardViews = contentItems.map(
                 contentItem -> new ArticleCardView(
                         contentItem.getId(),
                         contentItem.getOwner().getUsername(),
                         contentItem.getTitle(),
                         contentItem.getPreview(),
-                        contentViewService.formatDate(contentItem.getCreatedAt())
+                        contentViewService.formatDate(contentItem.getCreatedAt()),
+                        favoriteContentIds.contains(contentItem.getId())
                 ))
                 .toList();
 

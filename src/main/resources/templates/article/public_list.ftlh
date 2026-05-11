@@ -15,6 +15,9 @@
             --border: #e5e7eb;
             --link: #2563eb;
             --link-hover: #1d4ed8;
+            --star: #f59e0b;
+            --star-bg: #fffbeb;
+            --star-border: #fde68a;
         }
 
         * {
@@ -58,13 +61,13 @@
         }
 
         .article-card {
+            position: relative;
             display: block;
-            padding: 24px 28px;
+            padding: 24px 72px 24px 28px;
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-            text-decoration: none;
             color: inherit;
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
@@ -74,6 +77,45 @@
             border-color: #cbd5e1;
             box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
         }
+
+        .article-card-link {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .favorite-button {
+            position: absolute;
+            top: 22px;
+            right: 24px;
+            width: 42px;
+            height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #ffffff;
+            color: #9ca3af;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+        }
+
+        .favorite-button.active {
+            background: var(--star-bg);
+            color: var(--star);
+            border-color: var(--star-border);
+        }
+
+        .favorite-button:hover {
+            transform: scale(1.06);
+        }
+
+        .favorite-button:disabled {
+            cursor: default;
+            opacity: 0.6;
+            transform: none;
+        }
+
 
         .article-title {
             margin: 0 0 10px;
@@ -161,7 +203,12 @@
             }
 
             .article-card {
-                padding: 20px;
+                padding: 20px 64px 20px 20px;
+            }
+
+            .favorite-button {
+                top: 18px;
+                right: 18px;
             }
 
             .article-title {
@@ -174,6 +221,72 @@
         }
     </style>
 </head>
+
+<script>
+    <#if _csrf??>
+    const csrfHeaderName = "${_csrf.headerName}";
+    const csrfToken = "${_csrf.token}";
+    <#else>
+    const csrfHeaderName = null;
+    const csrfToken = null;
+    </#if>
+
+    document.addEventListener("click", async function (event) {
+        const button = event.target.closest(".favorite-button");
+
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const contentId = button.dataset.contentId;
+
+        if (!contentId) {
+            return;
+        }
+
+        button.disabled = true;
+
+        const headers = {};
+
+        if (csrfHeaderName && csrfToken) {
+            headers[csrfHeaderName] = csrfToken;
+        }
+
+        try {
+            const response = await fetch("/favorites/content/" + contentId, {
+                method: "POST",
+                headers: headers
+            });
+
+            if (!response.ok) {
+                alert("Не удалось изменить избранное");
+                button.disabled = false;
+                return;
+            }
+
+            const isFavoriteNow = button.classList.toggle("active");
+
+            button.textContent = isFavoriteNow ? "★" : "☆";
+
+            const title = isFavoriteNow
+                ? "Убрать из избранного"
+                : "Добавить в избранное";
+
+            button.title = title;
+            button.setAttribute("aria-label", title);
+
+            button.disabled = false;
+        } catch (e) {
+            console.error(e);
+            alert("Не удалось изменить избранное");
+            button.disabled = false;
+        }
+    });
+</script>
+
 <body>
 
 <main class="page-wrapper">
@@ -187,20 +300,31 @@
     <#if page.articles()?has_content>
         <section class="articles">
             <#list page.articles() as article>
-                <a class="article-card" href="/articles/${article.contentItemId()}">
-                    <h2 class="article-title">${article.title()}</h2>
+                <article class="article-card" id="article-card-${article.contentItemId()}">
+                    <button
+                            class="favorite-button <#if article.favorite()>active</#if>"
+                            type="button"
+                            data-content-id="${article.contentItemId()}"
+                            title="<#if article.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>"
+                            aria-label="<#if article.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>">
+                        <#if article.favorite()>★<#else>☆</#if>
+                    </button>
 
-                    <#if article.preview()?has_content>
-                        <p class="article-preview">${article.preview()}</p>
-                    <#else>
-                        <p class="article-preview">У статьи пока нет описания.</p>
-                    </#if>
+                    <a class="article-card-link" href="/articles/${article.contentItemId()}">
+                        <h2 class="article-title">${article.title()}</h2>
 
-                    <div class="article-meta">
-                        <span>Автор: ${article.owner()}</span>
-                        <span>Создано: ${article.createdAt()}</span>
-                    </div>
-                </a>
+                        <#if article.preview()?has_content>
+                            <p class="article-preview">${article.preview()}</p>
+                        <#else>
+                            <p class="article-preview">У статьи пока нет описания.</p>
+                        </#if>
+
+                        <div class="article-meta">
+                            <span>Автор: ${article.owner()}</span>
+                            <span>Создано: ${article.createdAt()}</span>
+                        </div>
+                    </a>
+                </article>
             </#list>
         </section>
 

@@ -174,9 +174,17 @@ public class ArticleController {
     public String getArticlesPublic(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
             Model model
     ) {
-        ArticlePageView articlePage = articleService.getPublishedArticles(page, size);
+        Long currentUserId = customUserDetails == null ?
+                null : customUserDetails.getUserId();
+
+        ArticlePageView articlePage = articleService.getPublishedArticles(
+                currentUserId,
+                page,
+                size
+        );
 
         model.addAttribute("page", articlePage);
 
