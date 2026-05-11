@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.CaseComment;
 
+import java.util.Optional;
+
 @Repository
 public interface CaseCommentRepository extends JpaRepository<CaseComment, Long> {
     @Query(
@@ -24,4 +26,6 @@ public interface CaseCommentRepository extends JpaRepository<CaseComment, Long> 
             """
     )
     Page<CaseComment> findByCaseEntityId(@Param("caseId") Long caseId, Pageable pageable);
+
+    Optional<CaseComment> findByCaseEntityIdAndId(Long caseId, Long id);
 }

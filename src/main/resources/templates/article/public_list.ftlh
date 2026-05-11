@@ -207,7 +207,7 @@
         <#if page.totalPages() gt 1>
             <nav class="pagination">
                 <#if page.hasPrevious()>
-                    <a href="/articles?page=${page.currentPage() - 1}&size=${page.size()}">Назад</a>
+                    <a href="/articles/public?page=${page.currentPage() - 1}&size=${page.size()}">Назад</a>
                 <#else>
                     <span class="disabled">Назад</span>
                 </#if>
@@ -216,12 +216,12 @@
                     <#if pageNumber == page.currentPage()>
                         <span class="active">${pageNumber + 1}</span>
                     <#else>
-                        <a href="/articles?page=${pageNumber}&size=${page.size()}">${pageNumber + 1}</a>
+                        <a href="/articles/public?page=${pageNumber}&size=${page.size()}">${pageNumber + 1}</a>
                     </#if>
                 </#list>
 
                 <#if page.hasNext()>
-                    <a href="/articles?page=${page.currentPage() + 1}&size=${page.size()}">Вперёд</a>
+                    <a href="/articles/public?page=${page.currentPage() + 1}&size=${page.size()}">Вперёд</a>
                 <#else>
                     <span class="disabled">Вперёд</span>
                 </#if>

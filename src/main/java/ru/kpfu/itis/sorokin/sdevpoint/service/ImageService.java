@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ImageContent;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ImageUploadResponse;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.StoredImageInfo;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ValidatedImage;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItemImage;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
@@ -85,12 +82,10 @@ public class ImageService {
         ContentItemImage contentItemImage = contentItemImageRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new NotFoundException("Image not found publicId=" + publicId));
 
-        String storageKey = contentItemImage.getStorageKey();
-
         byte[] content;
 
         try {
-            content = imageStorage.get(storageKey);
+            content = imageStorage.get(contentItemImage.getStorageKey());
         } catch (ImageStorageException e) {
             log.error("Error loading the image: {}", e.getMessage());
             throw new ImageStorageException("Что-то пошло не так, не удалось загрузить изображение");
@@ -98,6 +93,7 @@ public class ImageService {
 
         return new ImageContent(
                 contentItemImage.getContentType(),
+                contentItemImage.getSize(),
                 content
         );
     }

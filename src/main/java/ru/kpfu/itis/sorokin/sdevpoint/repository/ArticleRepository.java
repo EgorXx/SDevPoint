@@ -16,16 +16,6 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
         SELECT a
         FROM Article a
         JOIN FETCH a.contentItem ci
-        WHERE ci.visibility = 'PUBLIC'
-            AND ci.contentStatus = 'PUBLISHED'
-            AND ci.itemType = 'ARTICLE'
-    """)
-    List<Article> findAllPublicPublished();
-
-    @Query("""
-        SELECT a
-        FROM Article a
-        JOIN FETCH a.contentItem ci
         WHERE a.id = :id
     """)
     Optional<Article> findById(@Param("id") Long id);

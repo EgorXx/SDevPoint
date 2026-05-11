@@ -1,8 +1,7 @@
-package ru.kpfu.itis.sorokin.sdevpoint.web.controller;
+package ru.kpfu.itis.sorokin.sdevpoint.web.controller.page;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -206,16 +205,5 @@ public class CaseController {
         caseService.update(caseEditDto, customUserDetails.getUserId());
 
         return "redirect:/cases/" + contentId;
-    }
-
-    @DeleteMapping("/cases/{contentId}")
-    @ResponseBody
-    public ResponseEntity<Void> deleteCase(
-            @PathVariable Long contentId,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
-        caseService.deleteCase(contentId, customUserDetails.getUserId());
-
-        return ResponseEntity.noContent().build();
     }
 }

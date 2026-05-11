@@ -5,5 +5,6 @@ public record CaseCommentView(
         String owner,
         String createdAt,
         String text,
-        boolean canDelete
+        boolean canDelete,
+        boolean isAuthor
 ) {}

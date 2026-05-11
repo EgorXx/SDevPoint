@@ -8,6 +8,7 @@ public record CaseDiscussionPageView(
         String title,
         String description,
         String createdAt,
+        boolean canComment,
         List<CaseCommentView> caseComments,
         int currentPage,
         int size,

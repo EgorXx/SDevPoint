@@ -32,4 +32,14 @@ public class CaseComment {
 
     @Column(name = "created_at",nullable = false)
     private Instant createdAt;
+
+    public static CaseComment createNew(User user, Case caseEntity, String text) {
+        return new CaseComment(
+                null,
+                user,
+                caseEntity,
+                text,
+                Instant.now()
+        );
+    }
 }

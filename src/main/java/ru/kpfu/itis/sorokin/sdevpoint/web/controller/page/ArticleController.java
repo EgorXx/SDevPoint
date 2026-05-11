@@ -1,4 +1,4 @@
-package ru.kpfu.itis.sorokin.sdevpoint.web.controller;
+package ru.kpfu.itis.sorokin.sdevpoint.web.controller.page;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -168,16 +168,6 @@ public class ArticleController {
         articleService.update(articleEditDto, customUserDetails.getUserId());
 
         return "redirect:/articles/" + contentId;
-    }
-
-    @DeleteMapping("/articles/{contentId}")
-    public String deleteArticle(
-            @PathVariable("contentId") Long id,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
-        articleService.deleteArticle(id, customUserDetails.getUserId());
-
-        return "redirect:/articles/public";
     }
 
     @GetMapping("/articles/public")

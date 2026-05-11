@@ -1,9 +1,10 @@
-package ru.kpfu.itis.sorokin.sdevpoint.web.controller;
+package ru.kpfu.itis.sorokin.sdevpoint.web.controller.page;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +15,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.dto.ImageUploadResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CustomUserDetails;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ImageService;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -21,6 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ImageUploadController {
     private final ImageService imageService;
+    private static final Duration MAX_AGE_DURATION = Duration.ofDays(30);
 
     @PostMapping(path ="/api/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageUploadResponse> uploadImage(
@@ -51,6 +54,8 @@ public class ImageUploadController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(imageContent.contentType()))
+                .contentLength(imageContent.contentLength())
+                .cacheControl(CacheControl.maxAge(MAX_AGE_DURATION).cachePublic().immutable())
                 .body(new ByteArrayResource(imageContent.bytes()));
     }
 }

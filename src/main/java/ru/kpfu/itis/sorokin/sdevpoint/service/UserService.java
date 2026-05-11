@@ -13,9 +13,11 @@ import ru.kpfu.itis.sorokin.sdevpoint.dto.UserForm;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.EmailVerification;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.Role;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.UserAlreadyExists;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.EntityAlreadyExistsException;
 import ru.kpfu.itis.sorokin.sdevpoint.factory.UserFactory;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
+
+import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -50,7 +52,7 @@ public class UserService {
             if (cause instanceof ConstraintViolationException) {
                 //TODO: Добавить сюда конкретику, какого именно
                 log.warn("Violation of the constant");
-                throw new UserAlreadyExists("User with email already exists: " + userForm.email());
+                throw new EntityAlreadyExistsException("User with email already exists: " + userForm.email());
             } else {
                 log.error("UserRepository exception: {}, {}", e, cause.getMessage());
                 throw e;
@@ -70,7 +72,7 @@ public class UserService {
     private void verifiedEmail(String email) {
         if (userRepository.existsByEmail(email)) {
             log.warn("User with email: {} already exists", email);
-            throw new UserAlreadyExists("User with email already exists: " + email);
+            throw new EntityAlreadyExistsException("User with email already exists: " + email);
         }
     }
 }

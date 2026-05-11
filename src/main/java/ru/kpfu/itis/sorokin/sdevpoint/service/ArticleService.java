@@ -15,14 +15,11 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
-import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownTextParser;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ArticleRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 

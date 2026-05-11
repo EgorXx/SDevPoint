@@ -1,5 +1,7 @@
 package ru.kpfu.itis.sorokin.sdevpoint.service;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -11,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.CaseCommentView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.CaseDiscussionPageView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.DraftContentAccessException;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.CaseCommentRepository;
@@ -61,8 +65,8 @@ public class CaseCommentService {
                         caseComment.getUser().getUsername(),
                         contentViewService.formatDate(caseComment.getCreatedAt()),
                         caseComment.getText(),
-                        isCanDelete(userId, isAdmin, caseComment)
-
+                        isCanDelete(userId, isAdmin, caseComment),
+                        isAuthor(contentItem, caseComment)
                 ))
                 .toList();
 
@@ -72,6 +76,7 @@ public class CaseCommentService {
                 contentItem.getTitle(),
                 markdownRenderService.renderToSafeHtml(caseEntity.getDescription()),
                 contentViewService.formatDate(contentItem.getCreatedAt()),
+                userId != null,
                 caseCommentViews,
                 caseComments.getNumber(),
                 caseComments.getSize(),
@@ -86,6 +91,11 @@ public class CaseCommentService {
         if (userId == null) {return false;}
 
         return isAdmin || caseComment.getUser().getId().equals(userId);
+    }
+
+    private boolean isAuthor(ContentItem contentItem, CaseComment caseComment) {
+        return contentItem.getOwner().getId()
+                .equals(caseComment.getUser().getId());
     }
 
     private void checkAccess(ContentItem contentItem, Long userId) {
@@ -109,5 +119,46 @@ public class CaseCommentService {
         if (userId == null) {return false;}
 
         return contentItem.getOwner().getId().equals(userId);
+    }
+
+    @Transactional
+    public void createComment(String text, Long contentId, Long userId) {
+        Case caseEntity = caseRepository.findByContentItemId(contentId)
+                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+
+        ContentItem contentItem = caseEntity.getContentItem();
+
+        checkAccess(contentItem, userId);
+
+        if (text == null || text.isBlank()) {
+            throw new BadRequestException("Комментарий не должен быть пустым");
+        }
+
+        String normalizedText = text.trim();
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        CaseComment caseComment = CaseComment.createNew(user, caseEntity, normalizedText);
+
+        caseCommentRepository.save(caseComment);
+    }
+
+    @Transactional
+    public void deleteComment(Long contentId, Long commentId, Long userId) {
+        Case caseEntity = caseRepository.findByContentItemId(contentId)
+                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+
+        CaseComment caseComment = caseCommentRepository.findByCaseEntityIdAndId(caseEntity.getId(), commentId)
+                .orElseThrow(() -> new NotFoundException("Комментарий не найден"));
+
+        boolean isAdmin = userId != null && userRepository.existsByIdAndRole(userId, Role.ROLE_ADMIN);
+        boolean isOwnerComment = caseComment.getUser().getId().equals(userId);
+
+        if (!(isAdmin || isOwnerComment)) {
+            throw new ForbiddenException("Доступ запрещен");
+        }
+
+        caseCommentRepository.delete(caseComment);
     }
 }

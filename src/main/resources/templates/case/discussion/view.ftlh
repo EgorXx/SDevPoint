@@ -323,6 +323,33 @@
             .pagination {
                 flex-wrap: wrap;
             }
+
+            .comment-meta {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px 12px;
+                color: var(--text-muted);
+                font-size: 14px;
+            }
+
+            .comment-author {
+                color: #111827;
+                font-weight: 650;
+            }
+
+            .comment-author-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 3px 9px;
+                border-radius: 999px;
+                background: #eff6ff;
+                color: #1d4ed8;
+                border: 1px solid #bfdbfe;
+                font-size: 12px;
+                font-weight: 650;
+                line-height: 1.2;
+            }
         }
     </style>
 </head>
@@ -357,35 +384,52 @@
 
     <h2 class="section-title">Обсуждение</h2>
 
-    <section class="comment-form-card">
-        <h3 class="comment-form-title">Добавить комментарий</h3>
+    <#if discussionPage.canComment()>
+        <section class="comment-form-card">
+            <h3 class="comment-form-title">Добавить комментарий</h3>
 
-        <form method="post" action="/cases/${discussionPage.contentItemId()}/comments">
-            <#if _csrf??>
-                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+            <#if commentError?? && commentError?has_content>
+                <div style="color: red; margin-bottom: 12px;">
+                    ${commentError}
+                </div>
             </#if>
 
-            <textarea
-                    class="comment-textarea"
-                    name="text"
-                    placeholder="Напишите комментарий..."
-                    required></textarea>
+            <form method="post" action="/cases/${discussionPage.contentItemId()}/comments">
+                <#if _csrf??>
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                </#if>
 
-            <br>
+                <textarea
+                        class="comment-textarea"
+                        name="text"
+                        placeholder="Напишите комментарий..."
+                        required>${(commentText)!''}</textarea>
 
-            <button class="comment-submit" type="submit">
-                Отправить
-            </button>
-        </form>
-    </section>
+                <br>
+
+                <button class="comment-submit" type="submit">
+                    Отправить
+                </button>
+            </form>
+        </section>
+    <#else>
+        <div class="empty-state">
+            Чтобы оставить комментарий, нужно войти в аккаунт.
+        </div>
+    </#if>
 
     <#if discussionPage.caseComments()?has_content>
         <section class="comments" id="comments">
             <#list discussionPage.caseComments() as comment>
-                <article class="comment-card" id="comment-${comment.id()}">
+                <article class="comment-card" id="comment-${comment.commentId()}">
                     <div class="comment-header">
                         <div class="comment-meta">
                             <span class="comment-author">${comment.owner()}</span>
+
+                            <#if comment.isAuthor()>
+                                <span class="comment-author-badge">Автор кейса</span>
+                            </#if>
+
                             <span>${comment.createdAt()}</span>
                         </div>
 
@@ -393,7 +437,7 @@
                             <button
                                     class="delete-comment-button"
                                     type="button"
-                                    data-comment-id="${comment.id()}"
+                                    data-comment-id="${comment.commentId()}"
                                     title="Удалить комментарий"
                                     aria-label="Удалить комментарий">
                                 🗑
