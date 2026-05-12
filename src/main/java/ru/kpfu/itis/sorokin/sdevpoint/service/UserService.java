@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ProfileSettingsView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ProfileView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.UserForm;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.EmailVerification;
@@ -18,6 +19,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.EntityAlreadyExistsException;
 import ru.kpfu.itis.sorokin.sdevpoint.factory.UserFactory;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.web.form.ProfileNameSettingsForm;
 
 import java.util.Arrays;
 
@@ -84,10 +86,25 @@ public class UserService {
                 .orElseThrow(CurrentUserNotFoundException::new);
     }
 
+    @Transactional(readOnly = true)
+    public ProfileSettingsView getProfileSettingsView(Long userId) {
+        return userRepository.findById(userId)
+                .map(u -> new ProfileSettingsView(u.getUsername()))
+                .orElseThrow(CurrentUserNotFoundException::new);
+    }
+
     private void verifiedEmail(String email) {
         if (userRepository.existsByEmail(email)) {
             log.warn("User with email: {} already exists", email);
             throw new EntityAlreadyExistsException("User with email already exists: " + email);
         }
+    }
+
+    @Transactional
+    public void updateName(Long userId, ProfileNameSettingsForm nameForm) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(CurrentUserNotFoundException::new);
+
+        user.setUsername(nameForm.username());
     }
 }

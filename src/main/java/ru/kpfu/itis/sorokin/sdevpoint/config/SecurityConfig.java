@@ -29,6 +29,7 @@ public class SecurityConfig {
                         .requestMatchers("/registration").permitAll()
                         .requestMatchers(HttpMethod.GET, "/favorites").authenticated()
                         .requestMatchers(HttpMethod.POST, "/favorites/content/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/profile").authenticated()
                         .anyRequest().permitAll())
                 .formLogin(form -> form.permitAll())
                 .build();
