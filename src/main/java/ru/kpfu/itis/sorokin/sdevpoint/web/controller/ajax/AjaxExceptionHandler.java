@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.ImageStorageException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.web.dto.ErrorResponse;
 
@@ -26,5 +27,12 @@ public class AjaxExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(ImageStorageException.class)
+    public ResponseEntity<ErrorResponse> handleImageStorage(ImageStorageException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Не удалось загрузить изображение"));
     }
 }

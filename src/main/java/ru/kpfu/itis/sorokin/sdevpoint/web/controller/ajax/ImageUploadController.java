@@ -1,4 +1,4 @@
-package ru.kpfu.itis.sorokin.sdevpoint.web.controller.page;
+package ru.kpfu.itis.sorokin.sdevpoint.web.controller.ajax;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

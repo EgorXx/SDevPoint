@@ -4,37 +4,47 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.StoredImageInfo;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ImageStorageException;
+import ru.kpfu.itis.sorokin.sdevpoint.properties.ImageStorageProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
 public class InMemoryImageStorage implements ImageStorage {
-    private static final Path root = Path.of("images").toAbsolutePath().normalize();
+    private final Path root;
+
+    public InMemoryImageStorage(ImageStorageProperties imageStorageProperties) {
+        this.root = Path.of(imageStorageProperties.path()).toAbsolutePath().normalize();
+    }
 
     @Override
-    public StoredImageInfo save(MultipartFile file) {
-        String extension = extractExtension(file.getOriginalFilename());
-        String generatedName = UUID.randomUUID() + extension;
+    public StoredImageInfo save(
+            MultipartFile file,
+            Long contentItemId,
+            UUID imageId,
+            String extension) {
 
-        Path imagePath = root.resolve(generatedName).normalize();
+        String storageKey = "content-items/%d/%s%s"
+                .formatted(contentItemId, imageId, extension);
 
-        if (!imagePath.startsWith(root)) {
+        Path targetPath = root.resolve(storageKey).normalize();
+
+        if (!targetPath.startsWith(root)) {
             throw new ImageStorageException("Invalid image path");
         }
 
         try {
-            Files.createDirectories(root);
+            Files.createDirectories(targetPath.getParent());
 
             try (InputStream is = file.getInputStream()) {
-                Files.copy(is, imagePath);
+                Files.copy(is, targetPath, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            return new StoredImageInfo(generatedName);
-            
+            return new StoredImageInfo(storageKey);
         } catch (IOException e) {
             throw new ImageStorageException("Failed to store file: " + e);
         }
@@ -68,18 +78,5 @@ public class InMemoryImageStorage implements ImageStorage {
         } catch (IOException e) {
             throw new ImageStorageException("Error deleting an image, storageKey=" + storageKey);
         }
-    }
-
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null) {
-            return "";
-        }
-
-        int dotIndex = originalFilename.lastIndexOf('.');
-        if (dotIndex < 0) {
-            return "";
-        }
-
-        return originalFilename.substring(dotIndex);
     }
 }

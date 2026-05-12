@@ -49,6 +49,8 @@ app:
     url-prefix: "/avatars/"
     file-prefix: "avatar-"
     extension: ".png"
+  image-storage:
+    path: "storage/images"
 
 mail:
   sender: SDevPoint

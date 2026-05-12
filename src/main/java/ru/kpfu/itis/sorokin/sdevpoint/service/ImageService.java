@@ -34,7 +34,7 @@ public class ImageService {
 
     public ImageUploadResponse upload(MultipartFile image, Long contentItemId, Long userId) {
         ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
-                .orElseThrow(() -> new NotFoundException("Content Item not found, id=" + contentItemId));
+                .orElseThrow(() -> new NotFoundException("Контент не найден"));
 
         if (!contentItem.getOwner().getId().equals(userId)) {
             log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
@@ -42,23 +42,27 @@ public class ImageService {
         }
 
         ValidatedImage validatedImage = validateUploadImage(image);
+        UUID publicId = UUID.randomUUID();
 
         StoredImageInfo storedImageInfo;
 
         try {
-            storedImageInfo = imageStorage.save(image);
+            storedImageInfo = imageStorage.save(
+                    image,
+                    contentItemId,
+                    publicId,
+                    resolveExtension(validatedImage.contentType())
+            );
         } catch (ImageStorageException e) {
             log.error("Error saving the image: {}", e.getMessage());
             throw new ImageStorageException("Что-то пошло не так, не удалось сохранить изображение");
         }
 
-        UUID publicId = UUID.randomUUID();
-
         ContentItemImage contentItemImage = new ContentItemImage(
                 null,
                 contentItem,
                 validatedImage.originalName(),
-                storedImageInfo.generatedName(),
+                storedImageInfo.storageKey(),
                 validatedImage.size(),
                 validatedImage.height(),
                 validatedImage.width(),
@@ -80,7 +84,7 @@ public class ImageService {
 
     public ImageContent getImage(UUID publicId) {
         ContentItemImage contentItemImage = contentItemImageRepository.findByPublicId(publicId)
-                .orElseThrow(() -> new NotFoundException("Image not found publicId=" + publicId));
+                .orElseThrow(() -> new NotFoundException("Изображение не найдено"));
 
         byte[] content;
 
@@ -100,6 +104,16 @@ public class ImageService {
 
     public void deleteImage(String storageKey) {
         imageStorage.delete(storageKey);
+    }
+
+    private String resolveExtension(String contentType) {
+        return switch (contentType) {
+            case "image/png" -> ".png";
+            case "image/jpeg" -> ".jpg";
+            case "image/webp" -> ".webp";
+            case "image/gif" -> ".gif";
+            default -> throw new BadRequestException("Недопустимый тип изображения");
+        };
     }
 
     private ValidatedImage validateUploadImage(MultipartFile file) {
