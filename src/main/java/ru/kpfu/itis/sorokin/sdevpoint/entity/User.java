@@ -32,6 +32,9 @@ public class User {
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified;
 
+    @Column(name = "avatar_key", nullable = false)
+    private String avatarKey;
+
     @OneToOne(mappedBy = "user")
     EmailVerification emailVerification;
 }

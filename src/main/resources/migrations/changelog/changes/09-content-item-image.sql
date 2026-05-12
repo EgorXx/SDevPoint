@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS content_item_image
     public_id       uuid         NOT NULL,
 
     FOREIGN KEY (content_item_id) REFERENCES content_item (id) ON DELETE CASCADE,
-    CONSTRAINT unique_storage_key UNIQUE (storage_key)
+    CONSTRAINT unique_storage_key UNIQUE (storage_key),
+    CONSTRAINT unique_content_item_image_public_id UNIQUE (public_id)
 );

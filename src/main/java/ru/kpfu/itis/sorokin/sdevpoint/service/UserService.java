@@ -9,10 +9,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ProfileView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.UserForm;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.EmailVerification;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.Role;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.EntityAlreadyExistsException;
 import ru.kpfu.itis.sorokin.sdevpoint.factory.UserFactory;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
@@ -29,6 +31,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserFactory userFactory;
     private final EmailVerificationService emailVerificationService;
+    private final AvatarService avatarService;
 
     @Transactional
     public Long registerUser(@Valid UserForm userForm) {
@@ -39,7 +42,8 @@ public class UserService {
         User user = userFactory.createRegistredUser(
                 userForm.email(),
                 encodedPassword,
-                Role.ROLE_USER
+                Role.ROLE_USER,
+                avatarService.getRandomAvatarKey()
         );
 
         User savedUser;
@@ -67,6 +71,17 @@ public class UserService {
         emailVerificationService.sendEmailVerification(emailVerification);
 
         return savedUser.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public ProfileView getProfileView(Long userId, Long currentUserId) {
+        return userRepository.findById(userId)
+                .map(u -> new ProfileView(
+                        userId,
+                        avatarService.getAvatarUrl(u.getAvatarKey()),
+                        u.getUsername(),
+                        userId.equals(currentUserId)))
+                .orElseThrow(CurrentUserNotFoundException::new);
     }
 
     private void verifiedEmail(String email) {

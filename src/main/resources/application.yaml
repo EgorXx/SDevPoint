@@ -44,6 +44,11 @@ app:
     date-format: "dd.MM.yyyy HH:mm"
     timezone: "Europe/Moscow"
     preview-size: 100
+  avatar:
+    count: 5
+    url-prefix: "/avatars/"
+    file-prefix: "avatar-"
+    extension: ".png"
 
 mail:
   sender: SDevPoint

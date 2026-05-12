@@ -8,7 +8,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
 @Slf4j
 @Component
 public class UserFactory {
-    public User createRegistredUser(String email, String password, Role role) {
+    public User createRegistredUser(String email, String password, Role role, String avatarKey) {
         String username = extractUsername(email);
 
         User user = new User();
@@ -17,6 +17,7 @@ public class UserFactory {
         user.setRole(role);
         user.setPassword(password);
         user.setEmailVerified(false);
+        user.setAvatarKey(avatarKey);
 
         return user;
     }

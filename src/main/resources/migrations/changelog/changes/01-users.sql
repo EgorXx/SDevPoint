@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users
     password       VARCHAR(256) NOT NULL,
     role           VARCHAR(32)  NOT NULL,
     email_verified boolean      NOT NULL,
+    avatar_key     VARCHAR(100) NOT NULL,
 
     CONSTRAINT unique_email UNIQUE (email),
     CONSTRAINT role_check CHECK ( role IN ('ROLE_USER', 'ROLE_ADMIN') )
