@@ -70,7 +70,7 @@ public class FavoriteService {
         if (optionalFavorite.isPresent()) {
             favoriteRepository.delete(optionalFavorite.get());
         } else {
-            ContentItem contentItem = contentItemRepository.findById(contentId)
+            ContentItem contentItem = contentItemRepository.findWithOwnerById(contentId)
                     .orElseThrow(() -> new NotFoundException("Контент не найден"));
 
             checkCanAddToFavorite(contentItem, userId);

@@ -33,7 +33,7 @@ public class ImageService {
     private static final String ENDPOINT = "/api/image/";
 
     public ImageUploadResponse upload(MultipartFile image, Long contentItemId, Long userId) {
-        ContentItem contentItem = contentItemRepository.findById(contentItemId)
+        ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Content Item not found, id=" + contentItemId));
 
         if (!contentItem.getOwner().getId().equals(userId)) {

@@ -14,6 +14,7 @@ public interface CaseRepository extends JpaRepository<Case, Long> {
         SELECT c
         FROM Case c
         JOIN FETCH c.contentItem ci
+        JOIN FETCH ci.owner
         WHERE ci.id = :contentItemId
     """)
     Optional<Case> findByContentItemId(@Param("contentItemId") Long contentItemId);

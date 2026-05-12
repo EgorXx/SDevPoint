@@ -24,6 +24,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
         SELECT a
         FROM Article a
         JOIN FETCH a.contentItem ci
+        JOIN FETCH ci.owner
         WHERE ci.id = :contentId
     """)
     Optional<Article> findByContentItemId(@Param("contentId") Long contentId);

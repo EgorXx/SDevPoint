@@ -2,6 +2,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,7 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
             """)
     Optional<ContentItem> findDraftByUserIdAndItemType(@Param("userId") Long userId, @Param("itemType") ItemType itemType);
 
+    @EntityGraph(attributePaths = "owner")
     Page<ContentItem> findContentItemsByContentStatusAndItemTypeAndVisibility(ContentStatus contentStatus, ItemType itemType, Visibility visibility, Pageable pageable);
 
     @Query("""
@@ -43,4 +45,7 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
         WHERE c.id = :id
     """)
     Optional<ContentItem> findByIdWithImages(Long id);
+
+    @EntityGraph(attributePaths = "owner")
+    Optional<ContentItem> findWithOwnerById(Long id);
 }
