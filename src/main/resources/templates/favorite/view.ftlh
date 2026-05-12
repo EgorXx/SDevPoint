@@ -121,18 +121,27 @@
             right: 24px;
             width: 42px;
             height: 42px;
-            border: 1px solid var(--star-border);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            background: var(--star-bg);
-            color: var(--star);
+            background: #ffffff;
+            color: #9ca3af;
             font-size: 23px;
             line-height: 1;
             cursor: pointer;
-            transition: transform 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+            transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+        }
+
+        .favorite-button.active {
+            border-color: var(--star-border);
+            background: var(--star-bg);
+            color: var(--star);
         }
 
         .favorite-button:hover {
             transform: scale(1.06);
+        }
+
+        .favorite-button.active:hover {
             background: #fef3c7;
         }
 
@@ -247,7 +256,7 @@
 
                 <article class="content-card" id="favorite-card-${content.contentItemId()}">
                     <button
-                            class="favorite-button"
+                            class="favorite-button active"
                             type="button"
                             data-content-id="${content.contentItemId()}"
                             title="Убрать из избранного"
@@ -350,25 +359,26 @@
             });
 
             if (!response.ok) {
-                alert("Не удалось убрать из избранного");
+                alert("Не удалось изменить избранное");
                 button.disabled = false;
                 return;
             }
 
-            const card = document.getElementById("favorite-card-" + contentId);
+            const isFavoriteNow = button.classList.toggle("active");
 
-            if (card) {
-                card.remove();
-            }
+            button.textContent = isFavoriteNow ? "★" : "☆";
 
-            const favoriteList = document.getElementById("favoriteList");
+            const title = isFavoriteNow
+                ? "Убрать из избранного"
+                : "Вернуть в избранное";
 
-            if (favoriteList && favoriteList.children.length === 0) {
-                location.reload();
-            }
+            button.title = title;
+            button.setAttribute("aria-label", title);
+
+            button.disabled = false;
         } catch (e) {
             console.error(e);
-            alert("Не удалось убрать из избранного");
+            alert("Не удалось изменить избранное");
             button.disabled = false;
         }
     });

@@ -15,6 +15,9 @@
             --border: #e5e7eb;
             --link: #2563eb;
             --link-hover: #1d4ed8;
+            --star: #f59e0b;
+            --star-bg: #fffbeb;
+            --star-border: #fde68a;
         }
 
         * {
@@ -58,13 +61,13 @@
         }
 
         .case-card {
+            position: relative;
             display: block;
-            padding: 24px 28px;
+            padding: 24px 72px 24px 28px;
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-            text-decoration: none;
             color: inherit;
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
@@ -73,6 +76,44 @@
             transform: translateY(-2px);
             border-color: #cbd5e1;
             box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .case-card-link {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .favorite-button {
+            position: absolute;
+            top: 22px;
+            right: 24px;
+            width: 42px;
+            height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #ffffff;
+            color: #9ca3af;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+        }
+
+        .favorite-button.active {
+            background: var(--star-bg);
+            color: var(--star);
+            border-color: var(--star-border);
+        }
+
+        .favorite-button:hover {
+            transform: scale(1.06);
+        }
+
+        .favorite-button:disabled {
+            cursor: default;
+            opacity: 0.6;
+            transform: none;
         }
 
         .case-title {
@@ -161,7 +202,12 @@
             }
 
             .case-card {
-                padding: 20px;
+                padding: 20px 64px 20px 20px;
+            }
+
+            .favorite-button {
+                top: 18px;
+                right: 18px;
             }
 
             .case-title {
@@ -174,6 +220,81 @@
         }
     </style>
 </head>
+
+<script>
+    <#if _csrf??>
+    const csrfHeaderName = "${_csrf.headerName}";
+    const csrfToken = "${_csrf.token}";
+    <#else>
+    const csrfHeaderName = null;
+    const csrfToken = null;
+    </#if>
+
+    document.addEventListener("click", async function (event) {
+        const button = event.target.closest(".favorite-button");
+
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const contentId = button.dataset.contentId;
+
+        if (!contentId) {
+            return;
+        }
+
+        button.disabled = true;
+
+        const headers = {};
+
+        if (csrfHeaderName && csrfToken) {
+            headers[csrfHeaderName] = csrfToken;
+        }
+
+        try {
+            const response = await fetch("/favorites/content/" + contentId, {
+                method: "POST",
+                headers: headers
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = "/login";
+                return;
+            }
+
+            if (response.redirected && response.url.includes("/login")) {
+                window.location.href = "/login";
+                return;
+            }
+
+            if (!response.ok) {
+                alert("Не удалось изменить избранное");
+                return;
+            }
+
+            const isFavoriteNow = button.classList.toggle("active");
+
+            button.textContent = isFavoriteNow ? "★" : "☆";
+
+            const title = isFavoriteNow
+                ? "Убрать из избранного"
+                : "Добавить в избранное";
+
+            button.title = title;
+            button.setAttribute("aria-label", title);
+
+            button.disabled = false;
+        } catch (e) {
+            console.error(e);
+            alert("Не удалось изменить избранное");
+            button.disabled = false;
+        }
+    });
+</script>
+
 <body>
 
 <main class="page-wrapper">
@@ -187,20 +308,31 @@
     <#if page.cases()?has_content>
         <section class="cases">
             <#list page.cases() as caseItem>
-                <a class="case-card" href="/cases/${caseItem.contentItemId()}">
-                    <h2 class="case-title">${caseItem.title()}</h2>
+                <article class="case-card" id="case-card-${caseItem.contentItemId()}">
+                    <button
+                            class="favorite-button <#if caseItem.favorite()>active</#if>"
+                            type="button"
+                            data-content-id="${caseItem.contentItemId()}"
+                            title="<#if caseItem.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>"
+                            aria-label="<#if caseItem.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>">
+                        <#if caseItem.favorite()>★<#else>☆</#if>
+                    </button>
 
-                    <#if caseItem.preview()?has_content>
-                        <p class="case-preview">${caseItem.preview()}</p>
-                    <#else>
-                        <p class="case-preview">У кейса пока нет краткого описания.</p>
-                    </#if>
+                    <a class="case-card-link" href="/cases/${caseItem.contentItemId()}">
+                        <h2 class="case-title">${caseItem.title()}</h2>
 
-                    <div class="case-meta">
-                        <span>Автор: ${caseItem.owner()}</span>
-                        <span>Создано: ${caseItem.createdAt()}</span>
-                    </div>
-                </a>
+                        <#if caseItem.preview()?has_content>
+                            <p class="case-preview">${caseItem.preview()}</p>
+                        <#else>
+                            <p class="case-preview">У кейса пока нет краткого описания.</p>
+                        </#if>
+
+                        <div class="case-meta">
+                            <span>Автор: ${caseItem.owner()}</span>
+                            <span>Создано: ${caseItem.createdAt()}</span>
+                        </div>
+                    </a>
+                </article>
             </#list>
         </section>
 

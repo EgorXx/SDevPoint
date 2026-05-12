@@ -5,5 +5,6 @@ public record CaseCardView(
         String owner,
         String title,
         String preview,
-        String createdAt
+        String createdAt,
+        boolean favorite
 ) {}

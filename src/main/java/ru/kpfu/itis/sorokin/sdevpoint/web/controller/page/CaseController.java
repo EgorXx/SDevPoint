@@ -23,9 +23,17 @@ public class CaseController {
     public String getCasesPublic(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
             Model model
     ) {
-        CasePageView casePage = caseService.getPublishedCases(page, size);
+        Long currentUserId = customUserDetails == null ?
+                null : customUserDetails.getUserId();
+
+        CasePageView casePage = caseService.getPublishedCases(
+                currentUserId,
+                page,
+                size
+        );
 
         model.addAttribute("page", casePage);
 

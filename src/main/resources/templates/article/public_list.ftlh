@@ -261,9 +261,18 @@
                 headers: headers
             });
 
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = "/login";
+                return;
+            }
+
+            if (response.redirected && response.url.includes("/login")) {
+                window.location.href = "/login";
+                return;
+            }
+
             if (!response.ok) {
                 alert("Не удалось изменить избранное");
-                button.disabled = false;
                 return;
             }
 
