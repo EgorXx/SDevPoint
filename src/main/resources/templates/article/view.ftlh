@@ -184,6 +184,11 @@
             font-weight: 650;
         }
 
+        .article-views {
+            color: #374151;
+            font-weight: 600;
+        }
+
         .empty-content {
             color: var(--text-muted);
             font-style: italic;
@@ -220,6 +225,7 @@
                 <span>Автор: ${article.owner()}</span>
                 <span>Создано: ${article.createdAt()}</span>
                 <span>Обновлено: ${article.updatedAt()}</span>
+                <span class="article-views">Просмотры: ${(article.countViews())!0}</span>
             </div>
         </header>
 

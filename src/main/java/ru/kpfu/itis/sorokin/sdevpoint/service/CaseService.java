@@ -15,10 +15,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.CaseRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.FavoriteRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,6 +30,7 @@ public class CaseService {
     private final ContentItemRepository contentItemRepository;
     private final CaseRepository caseRepository;
     private final FavoriteRepository favoriteRepository;
+    private final ContentViewRepository contentViewRepository;
     private final ContentViewService contentViewService;
     private final MarkdownRenderService markdownRenderService;
 
@@ -102,7 +100,7 @@ public class CaseService {
         return contentItem.getId();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public CaseView getCaseView(Long contentItemId, Long userId) {
         Case caseEntity = caseRepository.findByContentItemId(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Кейс не найден"));
@@ -113,6 +111,12 @@ public class CaseService {
             checkAccess(contentItem, userId);
         }
 
+        if (userId != null) {
+            contentViewRepository.insertIfNotExists(contentItemId, userId);
+        }
+
+        long countViews = contentViewRepository.countViewsContent(contentItemId);
+
         return new CaseView(
                 contentItem.getId(),
                 contentItem.getTitle(),
@@ -121,7 +125,8 @@ public class CaseService {
                 !caseEntity.getSolution().isEmpty(),
                 markdownRenderService.renderToSafeHtml(caseEntity.getSolution()),
                 contentViewService.formatDate(contentItem.getCreatedAt()),
-                contentViewService.formatDate(contentItem.getUpdatedAt())
+                contentViewService.formatDate(contentItem.getUpdatedAt()),
+                countViews
         );
     }
 

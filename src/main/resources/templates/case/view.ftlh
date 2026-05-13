@@ -204,6 +204,11 @@
             font-weight: 650;
         }
 
+        .case-views {
+            color: #374151;
+            font-weight: 600;
+        }
+
         .empty-solution {
             margin-top: 18px;
             padding: 18px 20px;
@@ -294,6 +299,7 @@
                 <span>Автор: ${currentCase.owner()}</span>
                 <span>Создано: ${currentCase.createdAt()}</span>
                 <span>Обновлено: ${currentCase.updatedAt()}</span>
+                <span class="case-views">Просмотры: ${(currentCase.countViews())!0}</span>
             </div>
         </header>
 

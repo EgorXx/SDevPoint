@@ -6,5 +6,6 @@ public record ArticleView(
         String owner,
         String htmlText,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        Long countViews
 ) {}

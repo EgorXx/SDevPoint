@@ -8,5 +8,6 @@ public record CaseView(
         boolean hasSolution,
         String htmlTextSolution,
         String createdAt,
-        String updatedAt
+        String updatedAt,
+        Long countViews
 ) {}

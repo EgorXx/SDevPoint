@@ -15,10 +15,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.ArticleRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.FavoriteRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +32,7 @@ public class ArticleService {
     private final ContentItemRepository contentItemRepository;
     private final ContentViewService contentViewService;
     private final FavoriteRepository favoriteRepository;
+    private final ContentViewRepository contentViewRepository;
     private final MarkdownRenderService markdownRenderService;
 
     @Transactional
@@ -85,7 +83,7 @@ public class ArticleService {
         return contentItem.getId();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ArticleView getArticleView(Long contentItemId, Long userId) {
         Article article = articleRepository.findByContentItemId(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Статья не найдена"));
@@ -96,13 +94,20 @@ public class ArticleService {
             checkAccess(contentItem, userId);
         }
 
+        if (userId != null) {
+            contentViewRepository.insertIfNotExists(contentItemId, userId);
+        }
+
+        long countViews = contentViewRepository.countViewsContent(contentItemId);
+
         return new ArticleView(
                 contentItem.getId(),
                 contentItem.getTitle(),
                 contentItem.getOwner().getUsername(),
                 markdownRenderService.renderToSafeHtml(article.getText()),
                 contentViewService.formatDate(contentItem.getCreatedAt()),
-                contentViewService.formatDate(contentItem.getUpdatedAt())
+                contentViewService.formatDate(contentItem.getUpdatedAt()),
+                countViews
         );
     }
 

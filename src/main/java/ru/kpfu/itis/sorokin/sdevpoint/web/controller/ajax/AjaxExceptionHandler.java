@@ -13,13 +13,15 @@ import ru.kpfu.itis.sorokin.sdevpoint.web.dto.ErrorResponse;
 @RestControllerAdvice(basePackages = "ru.kpfu.itis.sorokin.sdevpoint.web.controller.ajax")
 public class AjaxExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<String> notFound(NotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    public ResponseEntity<ErrorResponse> notFound(NotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<String> forbidden(ForbiddenException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+    public ResponseEntity<ErrorResponse> forbidden(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(BadRequestException.class)
