@@ -5,8 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
-import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItemImage;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTask;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -22,6 +23,7 @@ public class DraftCleanupService {
     private static final Duration LIMIT_EMPTY_DRAFT = Duration.ofMinutes(1);
     private static final Duration LIMIT_SAVED_DRAFT = Duration.ofMinutes(2);
 
+    @Transactional
     public void cleanupExpiredDrafts() {
         Instant now = Instant.now();
 

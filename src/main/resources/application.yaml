@@ -40,6 +40,7 @@ spring:
 app:
   scheduler:
     cleanup-drafts-cron: "0 */2 * * * * "
+    cleanup-images-cron: "0 */2 * * * * "
   content-view:
     date-format: "dd.MM.yyyy HH:mm"
     timezone: "Europe/Moscow"

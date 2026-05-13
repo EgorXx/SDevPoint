@@ -12,4 +12,6 @@ public interface ImageStorage {
     byte[] get(String storageKey);
 
     void delete(String storageKey);
+
+    void deleteDirectory(String contentItemId);
 }

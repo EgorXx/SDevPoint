@@ -21,8 +21,23 @@ services:
     networks:
       - my_network
 
+#  test_db:
+#    image: postgres:17
+#    container_name: test_db
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: qwerty007
+#      POSTGRES_DB: sdevpoint
+#    volumes:
+#      - postgres_test_data:/var/lib/postgresql/data
+#    ports:
+#      - "5433:5432"
+#    networks:
+#      - my_network
+
 volumes:
   postgres_data:
+  postgres_test_data:
   redis-data:
 
 networks:

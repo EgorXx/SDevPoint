@@ -4,25 +4,26 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTask;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
 
 @Service
 @RequiredArgsConstructor
 public class DraftDeletionService {
-
     private final ContentItemRepository contentItemRepository;
-    private final ImageService imageService;
+    private final StorageDeletionTaskRepository storageDeletionTaskRepository;
 
     @Transactional
     public void deleteExpiredDraft(Long contentItemId) {
         ContentItem draft = contentItemRepository.findByIdWithImages(contentItemId)
-                .orElseThrow(() -> new NotFoundException("Контент не найден"));
+                .orElseThrow(() -> new NotFoundException("Content not found"));
 
-        draft.getImages().forEach(image ->
-                imageService.deleteImage(image.getStorageKey())
-        );
+        StorageDeletionTask deletionTask = StorageDeletionTask
+                .createContentDirectoryDeletion(contentItemId);
 
         contentItemRepository.delete(draft);
+        storageDeletionTaskRepository.save(deletionTask);
     }
 }

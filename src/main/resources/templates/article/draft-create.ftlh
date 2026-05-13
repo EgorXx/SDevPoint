@@ -1,102 +1,3 @@
-<#--<#import "/spring.ftl" as spring>-->
-
-<#--<!DOCTYPE html>-->
-<#--<html lang="ru">-->
-<#--<head>-->
-<#--    <meta charset="UTF-8">-->
-<#--    <title>Создание статьи</title>-->
-<#--</head>-->
-<#--<body>-->
-
-<#--<h1>Создание статьи</h1>-->
-
-<#--<form method="post" action="/articles/drafts/${draftId}/publish">-->
-
-<#--    &lt;#&ndash; Если включен Spring Security CSRF &ndash;&gt;-->
-<#--    <#if _csrf??>-->
-<#--        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">-->
-<#--    </#if>-->
-
-<#--    <div>-->
-<#--        <label for="title">Название</label>-->
-<#--        <br>-->
-
-<#--        <input-->
-<#--                id="title"-->
-<#--                type="text"-->
-<#--                name="title"-->
-<#--                value="${(form.title())!''}"-->
-<#--        >-->
-
-<#--        <@spring.bind "form.title"/>-->
-<#--        <#if spring.status.error>-->
-<#--            <div style="color: red;">-->
-<#--                <#list spring.status.errorMessages as error>-->
-<#--                    <p>${error}</p>-->
-<#--                </#list>-->
-<#--            </div>-->
-<#--        </#if>-->
-<#--    </div>-->
-
-<#--    <br>-->
-
-<#--    <div>-->
-<#--        <label for="text">Текст статьи</label>-->
-<#--        <br>-->
-
-<#--        <textarea-->
-<#--                id="text"-->
-<#--                name="text"-->
-<#--                rows="12"-->
-<#--                cols="80">${(form.text())!''}</textarea>-->
-
-<#--        <@spring.bind "form.text"/>-->
-<#--        <#if spring.status.error>-->
-<#--            <div style="color: red;">-->
-<#--                <#list spring.status.errorMessages as error>-->
-<#--                    <p>${error}</p>-->
-<#--                </#list>-->
-<#--            </div>-->
-<#--        </#if>-->
-<#--    </div>-->
-
-<#--    <br>-->
-
-<#--    <div>-->
-<#--        <label for="visibility">Доступ</label>-->
-<#--        <br>-->
-
-<#--        <select id="visibility" name="visibility">-->
-<#--            <option value="PUBLIC"-->
-<#--                    <#if ((form.visibility())!'PUBLIC')?string == 'PUBLIC'>selected</#if>>-->
-<#--                PUBLIC-->
-<#--            </option>-->
-
-<#--            <option value="PRIVATE"-->
-<#--                    <#if ((form.visibility())!'PUBLIC')?string == 'PRIVATE'>selected</#if>>-->
-<#--                PRIVATE-->
-<#--            </option>-->
-<#--        </select>-->
-
-<#--        <@spring.bind "form.visibility"/>-->
-<#--        <#if spring.status.error>-->
-<#--            <div style="color: red;">-->
-<#--                <#list spring.status.errorMessages as error>-->
-<#--                    <p>${error}</p>-->
-<#--                </#list>-->
-<#--            </div>-->
-<#--        </#if>-->
-<#--    </div>-->
-
-<#--    <br>-->
-
-<#--    <button type="submit">Опубликовать статью</button>-->
-
-<#--</form>-->
-
-<#--</body>-->
-<#--</html>-->
-
 <#import "/spring.ftl" as spring>
 
 <!DOCTYPE html>
@@ -113,6 +14,11 @@
 <body>
 
 <h1>Создание статьи</h1>
+
+<div
+        id="uploadError"
+        style="display: none; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+</div>
 
 <form id="articleForm" method="post" action="/articles/drafts/${draftId}/publish">
 
@@ -219,6 +125,7 @@
 
     const articleForm = document.getElementById("articleForm");
     const textArea = document.getElementById("text");
+    const uploadError = document.getElementById("uploadError");
 
     <#if _csrf??>
     const csrfHeaderName = "${_csrf.headerName}";
@@ -227,6 +134,48 @@
     const csrfHeaderName = null;
     const csrfToken = null;
     </#if>
+
+    function showUploadError(message) {
+        uploadError.textContent = message;
+        uploadError.style.display = "block";
+
+        setTimeout(function () {
+            uploadError.style.display = "none";
+            uploadError.textContent = "";
+        }, 7000);
+    }
+
+    async function extractErrorMessage(response) {
+        const defaultMessage = "Не удалось загрузить изображение";
+
+        const contentType = response.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+            try {
+                const errorBody = await response.json();
+
+                if (errorBody.message) {
+                    return errorBody.message;
+                }
+
+                return defaultMessage;
+            } catch (e) {
+                return defaultMessage;
+            }
+        }
+
+        try {
+            const text = await response.text();
+
+            if (text && text.trim().length > 0) {
+                return text;
+            }
+
+            return defaultMessage;
+        } catch (e) {
+            return defaultMessage;
+        }
+    }
 
     const editor = new Editor({
         el: document.querySelector("#editor"),
@@ -257,27 +206,23 @@
                     });
 
                     if (!response.ok) {
-                        let message = "Ошибка загрузки изображения";
-
-                        try {
-                            const errorBody = await response.json();
-                            if (errorBody.message) {
-                                message = errorBody.message;
-                            }
-                        } catch (e) {
-                            // response body is not json
-                        }
-
-                        alert(message);
+                        const message = await extractErrorMessage(response);
+                        showUploadError(message);
                         return;
                     }
 
                     const image = await response.json();
 
-                    callback(image.url, image.originalName);
+                    if (!image.url) {
+                        showUploadError("Сервер не вернул ссылку на изображение");
+                        return;
+                    }
+
+                    callback(image.url, image.originalName || "image");
 
                 } catch (e) {
-                    alert("Не удалось загрузить изображение");
+                    console.error(e);
+                    showUploadError("Не удалось загрузить изображение");
                 }
             }
         }

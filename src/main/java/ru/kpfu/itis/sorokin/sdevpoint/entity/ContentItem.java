@@ -59,7 +59,11 @@ public class ContentItem {
     @Column(nullable = false)
     private String preview;
 
-    @OneToMany(mappedBy = "contentItem", fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "contentItem",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<ContentItemImage> images;
 
     public static ContentItem createDraft(User user, ItemType itemType) {
