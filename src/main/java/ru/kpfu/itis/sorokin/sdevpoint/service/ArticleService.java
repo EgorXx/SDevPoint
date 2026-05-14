@@ -16,6 +16,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
+import ru.kpfu.itis.sorokin.sdevpoint.service.clean.ContentImageCleanupService;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +35,7 @@ public class ArticleService {
     private final FavoriteRepository favoriteRepository;
     private final ContentViewRepository contentViewRepository;
     private final MarkdownRenderService markdownRenderService;
+    private final ContentImageCleanupService contentImageCleanupService;
 
     @Transactional
     public Long getOrCreateDraft(Long userId) {
@@ -79,6 +81,11 @@ public class ArticleService {
         applyDraftData(contentItem, articleCreateDto);
 
         contentItem.setContentStatus(ContentStatus.PUBLISHED);
+
+        contentImageCleanupService.cleanupUnusedImages(
+                contentItem.getId(),
+                List.of(articleCreateDto.text())
+        );
 
         return contentItem.getId();
     }
@@ -143,6 +150,11 @@ public class ArticleService {
         contentItem.setUpdatedAt(Instant.now());
 
         article.setText(articleEditDto.text());
+
+        contentImageCleanupService.cleanupUnusedImages(
+                contentItem.getId(),
+                List.of(articleEditDto.text())
+        );
     }
 
     @Transactional

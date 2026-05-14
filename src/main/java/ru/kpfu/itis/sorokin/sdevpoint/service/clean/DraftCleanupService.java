@@ -1,13 +1,11 @@
-package ru.kpfu.itis.sorokin.sdevpoint.service;
+package ru.kpfu.itis.sorokin.sdevpoint.service.clean;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
-import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTask;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
 
 import java.time.Duration;
 import java.time.Instant;

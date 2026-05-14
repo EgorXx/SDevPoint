@@ -1,4 +1,4 @@
-package ru.kpfu.itis.sorokin.sdevpoint.service;
+package ru.kpfu.itis.sorokin.sdevpoint.service.clean;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

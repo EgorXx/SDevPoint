@@ -21,6 +21,4 @@ public interface StorageDeletionTaskRepository extends JpaRepository<StorageDele
             @Param("statuses") List<String> statuses,
             @Param("limit") int limit
     );
-
-
 }

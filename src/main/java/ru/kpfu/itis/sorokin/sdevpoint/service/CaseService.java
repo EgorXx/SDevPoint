@@ -16,6 +16,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
+import ru.kpfu.itis.sorokin.sdevpoint.service.clean.ContentImageCleanupService;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,6 +34,7 @@ public class CaseService {
     private final ContentViewRepository contentViewRepository;
     private final ContentViewService contentViewService;
     private final MarkdownRenderService markdownRenderService;
+    private final ContentImageCleanupService contentImageCleanupService;
 
 
     @Transactional
@@ -96,6 +98,11 @@ public class CaseService {
         applyDraftData(contentItem, caseCreateDto);
 
         contentItem.setContentStatus(ContentStatus.PUBLISHED);
+
+        contentImageCleanupService.cleanupUnusedImages(
+                contentItem.getId(),
+                List.of(caseCreateDto.description(), caseCreateDto.solution())
+        );
 
         return contentItem.getId();
     }
@@ -209,6 +216,11 @@ public class CaseService {
 
         caseEntity.setDescription(caseEditDto.description());
         caseEntity.setSolution(caseEditDto.hasSolution() ? caseEditDto.solution() : "");
+
+        contentImageCleanupService.cleanupUnusedImages(
+                contentItem.getId(),
+                List.of(caseEditDto.description(), caseEditDto.solution())
+        );
     }
 
     @Transactional
