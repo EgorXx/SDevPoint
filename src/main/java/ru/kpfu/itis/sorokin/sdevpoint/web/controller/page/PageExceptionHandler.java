@@ -8,6 +8,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ItemType;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.*;
 import ru.kpfu.itis.sorokin.sdevpoint.web.dto.ErrorResponse;
@@ -29,21 +30,21 @@ public class PageExceptionHandler {
     @ExceptionHandler(ArticleAlreadyPublished.class)
     public String handleArticleAlreadyPublished(
             ArticleAlreadyPublished ex,
-            Model model
+            RedirectAttributes redirectAttributes
     ) {
-        model.addAttribute("error", ex.getMessage());
+        redirectAttributes.addFlashAttribute("error", ex.getMessage());
 
-        return "article/edit";
+        return "redirect:/articles/" + ex.getContentItemId() + "/edit";
     }
 
     @ExceptionHandler(CaseAlreadyPublished.class)
     public String handleCaseAlreadyPublished(
-            ArticleAlreadyPublished ex,
-            Model model
+            CaseAlreadyPublished ex,
+            RedirectAttributes redirectAttributes
     ) {
-        model.addAttribute("error", ex.getMessage());
+        redirectAttributes.addFlashAttribute("error", ex.getMessage());
 
-        return "case/edit";
+        return "redirect:/cases/" + ex.getContentItemId() + "/edit";
     }
 
     @ExceptionHandler(NotFoundException.class)

@@ -240,7 +240,7 @@ public class ArticleService {
 
         if (contentItem.getContentStatus() == ContentStatus.PUBLISHED) {
             log.debug("Access is denied, article has already been published contentItemId={}", contentItem.getId());
-            throw new ArticleAlreadyPublished("Статья уже опубликована");
+            throw new ArticleAlreadyPublished(contentItem.getId());
         }
 
         return contentItem;

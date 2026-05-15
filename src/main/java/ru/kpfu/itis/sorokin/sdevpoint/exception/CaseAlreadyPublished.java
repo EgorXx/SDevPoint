@@ -1,7 +1,14 @@
 package ru.kpfu.itis.sorokin.sdevpoint.exception;
 
+import lombok.Getter;
+
+@Getter
 public class CaseAlreadyPublished extends RuntimeException {
-    public CaseAlreadyPublished(String message) {
-        super(message);
+
+    private final Long contentItemId;
+
+    public CaseAlreadyPublished(Long contentItemId) {
+        super("Кейс уже опубликован");
+        this.contentItemId = contentItemId;
     }
 }

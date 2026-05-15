@@ -145,7 +145,7 @@ public class CaseService {
 
         if (contentItem.getContentStatus() == ContentStatus.PUBLISHED) {
             log.debug("Access is denied, case has already been published contentItemId={}", contentItem.getId());
-            throw new CaseAlreadyPublished("Кейс уже опубликован");
+            throw new CaseAlreadyPublished(draftId);
         }
 
         return contentItem;
