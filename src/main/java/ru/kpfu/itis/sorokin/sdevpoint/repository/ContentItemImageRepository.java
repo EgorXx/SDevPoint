@@ -13,4 +13,6 @@ public interface ContentItemImageRepository extends JpaRepository<ContentItemIma
     Optional<ContentItemImage> findByPublicId(UUID publicId);
 
     List<ContentItemImage> findByContentItemId(Long contentItemId);
+
+    Optional<ContentItemImage> findByContentItemIdAndPublicId(Long contentItemId, UUID publicId);
 }

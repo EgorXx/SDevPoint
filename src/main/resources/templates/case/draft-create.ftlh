@@ -15,6 +15,11 @@
 
 <h1>Создание кейса</h1>
 
+<div
+        id="uploadError"
+        style="display: none; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+</div>
+
 <form id="caseForm" method="post" action="/cases/drafts/${draftId}/publish">
 
     <#if _csrf??>
@@ -118,6 +123,19 @@
 
     <br>
 
+    <div id="uploadedImagesBlock"
+         style="margin-top: 24px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h3 style="margin-top: 0;">Загруженные изображения</h3>
+
+        <div id="uploadedImagesEmpty" style="color: #6b7280;">
+            Изображений пока нет.
+        </div>
+
+        <div id="uploadedImagesList" style="display: grid; gap: 10px;"></div>
+    </div>
+
+    <br>
+
     <div>
         <label for="visibility">Доступ</label>
         <br>
@@ -169,6 +187,8 @@
 <script>
     const Editor = toastui.Editor;
 
+    const contentItemId = "${draftId}";
+
     const caseForm = document.getElementById("caseForm");
 
     const descriptionTextArea = document.getElementById("description");
@@ -177,19 +197,179 @@
     const hasSolutionSelect = document.getElementById("hasSolution");
     const solutionBlock = document.getElementById("solutionBlock");
 
-    <#if _csrf??>
-    const csrfHeaderName = "${_csrf.headerName}";
-    const csrfToken = "${_csrf.token}";
-    <#else>
-    const csrfHeaderName = null;
-    const csrfToken = null;
-    </#if>
+    const uploadError = document.getElementById("uploadError");
+    const uploadedImagesList = document.getElementById("uploadedImagesList");
+    const uploadedImagesEmpty = document.getElementById("uploadedImagesEmpty");
+
+    const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
+    const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+
+    function showUploadError(message) {
+        uploadError.textContent = message;
+        uploadError.style.display = "block";
+
+        setTimeout(function () {
+            uploadError.style.display = "none";
+            uploadError.textContent = "";
+        }, 7000);
+    }
+
+    async function extractErrorMessage(response) {
+        const defaultMessage = "Не удалось выполнить операцию с изображением";
+        const contentType = response.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+            try {
+                const errorBody = await response.json();
+
+                if (errorBody.message) {
+                    return errorBody.message;
+                }
+
+                return defaultMessage;
+            } catch (e) {
+                return defaultMessage;
+            }
+        }
+
+        try {
+            const text = await response.text();
+
+            if (text && text.trim().length > 0) {
+                return text;
+            }
+
+            return defaultMessage;
+        } catch (e) {
+            return defaultMessage;
+        }
+    }
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) {
+            return bytes + " Б";
+        }
+
+        if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(1) + " КБ";
+        }
+
+        return (bytes / (1024 * 1024)).toFixed(1) + " МБ";
+    }
+
+    function refreshEmptyState() {
+        uploadedImagesEmpty.style.display =
+            uploadedImagesList.children.length === 0 ? "block" : "none";
+    }
+
+    function addImageToList(image) {
+        const existing = document.getElementById("uploaded-image-" + image.publicId);
+
+        if (existing) {
+            return;
+        }
+
+        const item = document.createElement("div");
+
+        item.id = "uploaded-image-" + image.publicId;
+        item.style.padding = "12px";
+        item.style.border = "1px solid #e5e7eb";
+        item.style.borderRadius = "10px";
+        item.style.background = "#ffffff";
+
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.justifyContent = "space-between";
+        wrapper.style.gap = "12px";
+        wrapper.style.alignItems = "flex-start";
+
+        const info = document.createElement("div");
+
+        const name = document.createElement("div");
+        const strong = document.createElement("strong");
+        strong.textContent = image.originalName || "image";
+        name.appendChild(strong);
+
+        const meta = document.createElement("div");
+        meta.style.color = "#6b7280";
+        meta.style.fontSize = "14px";
+        meta.textContent = formatBytes(image.size || 0);
+
+        const linkWrapper = document.createElement("div");
+        linkWrapper.style.fontSize = "14px";
+        linkWrapper.style.marginTop = "4px";
+
+        const link = document.createElement("a");
+        link.href = image.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = image.url;
+
+        linkWrapper.appendChild(link);
+
+        info.appendChild(name);
+        info.appendChild(meta);
+        info.appendChild(linkWrapper);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-uploaded-image-button";
+        deleteButton.dataset.publicId = image.publicId;
+        deleteButton.dataset.url = image.url;
+        deleteButton.textContent = "Удалить";
+        deleteButton.style.border = "1px solid #fecaca";
+        deleteButton.style.background = "#fef2f2";
+        deleteButton.style.color = "#dc2626";
+        deleteButton.style.borderRadius = "8px";
+        deleteButton.style.padding = "7px 10px";
+        deleteButton.style.cursor = "pointer";
+
+        wrapper.appendChild(info);
+        wrapper.appendChild(deleteButton);
+
+        item.appendChild(wrapper);
+
+        uploadedImagesList.prepend(item);
+        refreshEmptyState();
+    }
+
+    async function loadUploadedImages() {
+        try {
+            const response = await fetch("/api/content-items/" + contentItemId + "/images");
+
+            if (!response.ok) {
+                return;
+            }
+
+            const images = await response.json();
+
+            uploadedImagesList.innerHTML = "";
+
+            images.forEach(addImageToList);
+            refreshEmptyState();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function removeImageReferencesFromEditor(editor, imageUrl) {
+        const markdown = editor.getMarkdown();
+
+        const escapedUrl = imageUrl.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+        const imageMarkdownRegex = new RegExp("!\\[[^\\]]*\\]\\(" + escapedUrl + "\\)\\s*", "g");
+
+        const updatedMarkdown = markdown.replace(imageMarkdownRegex, "");
+
+        if (updatedMarkdown !== markdown) {
+            editor.setMarkdown(updatedMarkdown);
+        }
+    }
 
     async function uploadImage(blob, callback) {
         const formData = new FormData();
 
         formData.append("file", blob);
-        formData.append("contentItemId", "${draftId}");
+        formData.append("contentItemId", contentItemId);
 
         const headers = {};
 
@@ -205,27 +385,23 @@
             });
 
             if (!response.ok) {
-                let message = "Ошибка загрузки изображения";
-
-                try {
-                    const errorBody = await response.json();
-
-                    if (errorBody.message) {
-                        message = errorBody.message;
-                    }
-                } catch (e) {
-                    // response body is not json
-                }
-
-                alert(message);
+                const message = await extractErrorMessage(response);
+                showUploadError(message);
                 return;
             }
 
             const image = await response.json();
 
-            callback(image.url, image.originalName);
+            if (!image.url) {
+                showUploadError("Сервер не вернул ссылку на изображение");
+                return;
+            }
+
+            callback(image.url, image.originalName || "image");
+            addImageToList(image);
         } catch (e) {
-            alert("Не удалось загрузить изображение");
+            console.error(e);
+            showUploadError("Не удалось загрузить изображение");
         }
     }
 
@@ -271,6 +447,64 @@
 
     syncSolutionVisibility();
 
+    document.addEventListener("click", async function (event) {
+        const button = event.target.closest(".delete-uploaded-image-button");
+
+        if (!button) {
+            return;
+        }
+
+        const publicId = button.dataset.publicId;
+        const imageUrl = button.dataset.url;
+
+        if (!publicId) {
+            return;
+        }
+
+        const confirmed = confirm("Удалить изображение? Ссылка на него будет удалена из описания и решения.");
+
+        if (!confirmed) {
+            return;
+        }
+
+        button.disabled = true;
+
+        const headers = {};
+
+        if (csrfHeaderName && csrfToken) {
+            headers[csrfHeaderName] = csrfToken;
+        }
+
+        try {
+            const response = await fetch("/api/content-items/" + contentItemId + "/images/" + publicId, {
+                method: "DELETE",
+                headers: headers
+            });
+
+            if (!response.ok) {
+                const message = await extractErrorMessage(response);
+                showUploadError(message);
+                button.disabled = false;
+                return;
+            }
+
+            removeImageReferencesFromEditor(descriptionEditor, imageUrl);
+            removeImageReferencesFromEditor(solutionEditor, imageUrl);
+
+            const item = document.getElementById("uploaded-image-" + publicId);
+
+            if (item) {
+                item.remove();
+            }
+
+            refreshEmptyState();
+        } catch (e) {
+            console.error(e);
+            showUploadError("Не удалось удалить изображение");
+            button.disabled = false;
+        }
+    });
+
     caseForm.addEventListener("submit", function () {
         descriptionTextArea.value = descriptionEditor.getMarkdown();
 
@@ -280,6 +514,8 @@
             solutionTextArea.value = "";
         }
     });
+
+    loadUploadedImages();
 </script>
 
 </body>

@@ -10,12 +10,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ContentImageView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ImageContent;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.ImageUploadResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CustomUserDetails;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ImageService;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -57,5 +59,33 @@ public class ImageUploadController {
                 .contentLength(imageContent.contentLength())
                 .cacheControl(CacheControl.maxAge(MAX_AGE_DURATION).cachePublic().immutable())
                 .body(new ByteArrayResource(imageContent.bytes()));
+    }
+
+    @GetMapping("/api/content-items/{contentItemId}/images")
+    public ResponseEntity<List<ContentImageView>> getContentImages(
+            @PathVariable Long contentItemId,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        List<ContentImageView> images = imageService.getContentImages(
+                contentItemId,
+                customUserDetails.getUserId()
+        );
+
+        return ResponseEntity.ok(images);
+    }
+
+    @DeleteMapping("/api/content-items/{contentItemId}/images/{publicId}")
+    public ResponseEntity<Void> deleteContentImage(
+            @PathVariable Long contentItemId,
+            @PathVariable UUID publicId,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        imageService.deleteContentImage(
+                contentItemId,
+                publicId,
+                customUserDetails.getUserId()
+        );
+
+        return ResponseEntity.noContent().build();
     }
 }

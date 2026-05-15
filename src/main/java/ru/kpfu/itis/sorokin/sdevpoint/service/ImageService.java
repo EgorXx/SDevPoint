@@ -3,22 +3,26 @@ package ru.kpfu.itis.sorokin.sdevpoint.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItemImage;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTask;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ImageStorageException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemImageRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -28,6 +32,7 @@ public class ImageService {
     private final ContentItemRepository contentItemRepository;
     private final ContentItemImageRepository contentItemImageRepository;
     private final ImageStorage imageStorage;
+    private final StorageDeletionTaskRepository storageDeletionTaskRepository;
 
     private static final long SIZE_LIMIT = 5L * 1024 * 1024;
     private static final String ENDPOINT = "/api/image/";
@@ -36,10 +41,7 @@ public class ImageService {
         ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Контент не найден"));
 
-        if (!contentItem.getOwner().getId().equals(userId)) {
-            log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
-            throw new ForbiddenException("Доступ к контенту запрещен запрещен");
-        }
+        checkOwner(contentItem, userId);
 
         ValidatedImage validatedImage = validateUploadImage(image);
         UUID publicId = UUID.randomUUID();
@@ -100,6 +102,50 @@ public class ImageService {
                 contentItemImage.getSize(),
                 content
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<ContentImageView> getContentImages(Long contentItemId, Long userId) {
+        ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
+                .orElseThrow(() -> new NotFoundException("Контент не найден"));
+
+        checkOwner(contentItem, userId);
+
+        return contentItemImageRepository.findByContentItemId(contentItemId)
+                .stream()
+                .map(image -> new ContentImageView(
+                        image.getPublicId(),
+                        image.getOriginalName(),
+                        image.getSize(),
+                        image.getContentType(),
+                        ENDPOINT + image.getPublicId()
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public void deleteContentImage(Long contentItemId, UUID publicId, Long userId) {
+        ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
+                .orElseThrow(() -> new NotFoundException("Контент не найден"));
+
+        checkOwner(contentItem, userId);
+
+        ContentItemImage image = contentItemImageRepository
+                .findByContentItemIdAndPublicId(contentItemId, publicId)
+                .orElseThrow(() -> new NotFoundException("Изображение не найдено"));
+
+        storageDeletionTaskRepository.save(
+                StorageDeletionTask.createFileDeletion(image.getStorageKey())
+        );
+
+        contentItemImageRepository.delete(image);
+    }
+
+    public void checkOwner(ContentItem contentItem, Long userId) {
+        if (!contentItem.getOwner().getId().equals(userId)) {
+            log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
+            throw new ForbiddenException("Доступ к контенту запрещен запрещен");
+        }
     }
 
     public void deleteImage(String storageKey) {

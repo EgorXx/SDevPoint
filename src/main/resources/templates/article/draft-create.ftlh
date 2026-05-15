@@ -73,6 +73,16 @@
     <br>
 
     <div>
+        <div id="uploadedImagesBlock" style="margin-top: 24px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px;">
+            <h3 style="margin-top: 0;">Загруженные изображения</h3>
+
+            <div id="uploadedImagesEmpty" style="color: #6b7280;">
+                Изображений пока нет.
+            </div>
+
+            <div id="uploadedImagesList" style="display: grid; gap: 10px;"></div>
+        </div>
+
         <label for="visibility">Доступ</label>
         <br>
 
@@ -219,6 +229,7 @@
                     }
 
                     callback(image.url, image.originalName || "image");
+                    addImageToList(image);
 
                 } catch (e) {
                     console.error(e);
@@ -231,6 +242,192 @@
     articleForm.addEventListener("submit", function () {
         textArea.value = editor.getMarkdown();
     });
+
+    const uploadedImagesList = document.getElementById("uploadedImagesList");
+    const uploadedImagesEmpty = document.getElementById("uploadedImagesEmpty");
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) {
+            return bytes + " Б";
+        }
+
+        if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(1) + " КБ";
+        }
+
+        return (bytes / (1024 * 1024)).toFixed(1) + " МБ";
+    }
+
+    function escapeHtml(value) {
+        return value
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll("\"", "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function refreshEmptyState() {
+        uploadedImagesEmpty.style.display =
+            uploadedImagesList.children.length === 0 ? "block" : "none";
+    }
+
+    function addImageToList(image) {
+        const existing = document.getElementById("uploaded-image-" + image.publicId);
+
+        if (existing) {
+            return;
+        }
+
+        const item = document.createElement("div");
+
+        item.id = "uploaded-image-" + image.publicId;
+        item.style.padding = "12px";
+        item.style.border = "1px solid #e5e7eb";
+        item.style.borderRadius = "10px";
+        item.style.background = "#ffffff";
+
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.justifyContent = "space-between";
+        wrapper.style.gap = "12px";
+        wrapper.style.alignItems = "flex-start";
+
+        const info = document.createElement("div");
+
+        const name = document.createElement("div");
+        const strong = document.createElement("strong");
+        strong.textContent = image.originalName || "image";
+        name.appendChild(strong);
+
+        const size = document.createElement("div");
+        size.style.color = "#6b7280";
+        size.style.fontSize = "14px";
+        size.textContent = formatBytes(image.size || 0);
+
+        const linkWrapper = document.createElement("div");
+        linkWrapper.style.fontSize = "14px";
+        linkWrapper.style.marginTop = "4px";
+
+        const link = document.createElement("a");
+        link.href = image.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = image.url;
+
+        linkWrapper.appendChild(link);
+
+        info.appendChild(name);
+        info.appendChild(size);
+        info.appendChild(linkWrapper);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-uploaded-image-button";
+        deleteButton.dataset.publicId = image.publicId;
+        deleteButton.dataset.url = image.url;
+        deleteButton.textContent = "Удалить";
+        deleteButton.style.border = "1px solid #fecaca";
+        deleteButton.style.background = "#fef2f2";
+        deleteButton.style.color = "#dc2626";
+        deleteButton.style.borderRadius = "8px";
+        deleteButton.style.padding = "7px 10px";
+        deleteButton.style.cursor = "pointer";
+
+        wrapper.appendChild(info);
+        wrapper.appendChild(deleteButton);
+
+        item.appendChild(wrapper);
+
+        uploadedImagesList.prepend(item);
+        refreshEmptyState();
+    }
+
+    async function loadUploadedImages() {
+        const response = await fetch("/api/content-items/${draftId}/images");
+
+        if (!response.ok) {
+            return;
+        }
+
+        const images = await response.json();
+
+        uploadedImagesList.innerHTML = "";
+
+        images.forEach(addImageToList);
+        refreshEmptyState();
+    }
+
+    function removeImageReferencesFromEditor(editor, imageUrl) {
+        const markdown = editor.getMarkdown();
+
+        const escapedUrl = imageUrl.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+        const imageMarkdownRegex = new RegExp("!\\[[^\\]]*\\]\\(" + escapedUrl + "\\)\\s*", "g");
+
+        const updatedMarkdown = markdown.replace(imageMarkdownRegex, "");
+
+        if (updatedMarkdown !== markdown) {
+            editor.setMarkdown(updatedMarkdown);
+        }
+    }
+
+    document.addEventListener("click", async function (event) {
+        const button = event.target.closest(".delete-uploaded-image-button");
+
+        if (!button) {
+            return;
+        }
+
+        const publicId = button.dataset.publicId;
+        const imageUrl = button.dataset.url;
+
+        if (!publicId) {
+            return;
+        }
+
+        const confirmed = confirm("Удалить изображение? Ссылка на него будет удалена из текста.");
+
+        if (!confirmed) {
+            return;
+        }
+
+        button.disabled = true;
+
+        const headers = {};
+
+        if (csrfHeaderName && csrfToken) {
+            headers[csrfHeaderName] = csrfToken;
+        }
+
+        try {
+            const response = await fetch("/api/content-items/${draftId}/images/" + publicId, {
+                method: "DELETE",
+                headers: headers
+            });
+
+            if (!response.ok) {
+                alert("Не удалось удалить изображение");
+                button.disabled = false;
+                return;
+            }
+
+            removeImageReferencesFromEditor(editor, imageUrl);
+
+            const item = document.getElementById("uploaded-image-" + publicId);
+
+            if (item) {
+                item.remove();
+            }
+
+            refreshEmptyState();
+        } catch (e) {
+            console.error(e);
+            alert("Не удалось удалить изображение");
+            button.disabled = false;
+        }
+    });
+
+    loadUploadedImages();
 </script>
 
 </body>
