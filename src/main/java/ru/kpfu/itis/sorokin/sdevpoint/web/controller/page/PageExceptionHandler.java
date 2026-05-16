@@ -27,26 +27,6 @@ public class PageExceptionHandler {
         return "redirect:/auth/login?sessionExpired";
     }
 
-    @ExceptionHandler(ArticleAlreadyPublished.class)
-    public String handleArticleAlreadyPublished(
-            ArticleAlreadyPublished ex,
-            RedirectAttributes redirectAttributes
-    ) {
-        redirectAttributes.addFlashAttribute("error", ex.getMessage());
-
-        return "redirect:/articles/" + ex.getContentItemId() + "/edit";
-    }
-
-    @ExceptionHandler(CaseAlreadyPublished.class)
-    public String handleCaseAlreadyPublished(
-            CaseAlreadyPublished ex,
-            RedirectAttributes redirectAttributes
-    ) {
-        redirectAttributes.addFlashAttribute("error", ex.getMessage());
-
-        return "redirect:/cases/" + ex.getContentItemId() + "/edit";
-    }
-
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<String> notFound(NotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

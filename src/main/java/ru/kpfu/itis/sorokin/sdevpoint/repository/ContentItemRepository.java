@@ -27,6 +27,8 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
             """)
     Optional<ContentItem> findDraftByUserIdAndItemType(@Param("userId") Long userId, @Param("itemType") ItemType itemType);
 
+    Optional<ContentItem> findByIdAndOwnerId(Long id, Long userId);
+
     @EntityGraph(attributePaths = "owner")
     Page<ContentItem> findContentItemsByContentStatusAndItemTypeAndVisibility(ContentStatus contentStatus, ItemType itemType, Visibility visibility, Pageable pageable);
 
@@ -48,4 +50,23 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
 
     @EntityGraph(attributePaths = "owner")
     Optional<ContentItem> findWithOwnerById(Long id);
+
+    @EntityGraph(attributePaths = "owner")
+    Page<ContentItem> findByOwnerId(Long userId, Pageable pageable);
+
+    @Query("""
+    SELECT c
+    FROM ContentItem c
+    WHERE c.id = :draftId
+      AND c.owner.id = :userId
+      AND c.contentStatus = 'DRAFT'
+      AND c.itemType = :itemType
+""")
+    Optional<ContentItem> findDraftByIdAndOwnerId(
+            @Param("draftId") Long draftId,
+            @Param("userId") Long userId,
+            @Param("itemType") ItemType itemType
+    );
+
+    Optional<ContentItem> findByIdAndOwnerIdAndItemType(Long id, Long userId, ItemType itemType);
 }

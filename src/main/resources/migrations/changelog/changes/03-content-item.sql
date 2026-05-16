@@ -16,6 +16,6 @@ CREATE TABLE IF NOT EXISTS content_item
     FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT visibility_check CHECK ( visibility IN ('PUBLIC', 'PRIVATE') ),
     CONSTRAINT item_type_check CHECK ( item_type IN ('ARTICLE', 'CASE') ),
-    CONSTRAINT content_status_check CHECK ( content_status IN ('DRAFT', 'PUBLISHED') ),
+    CONSTRAINT content_status_check CHECK ( content_status IN ('DRAFT', 'PUBLISHED', 'PENDING_REVIEW', 'REJECTED') ),
     CONSTRAINT unique_title_by_user UNIQUE (user_id, title)
 );

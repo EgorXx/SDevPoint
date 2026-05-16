@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.ArticleAlreadyPublished;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
@@ -36,6 +34,9 @@ public class ArticleService {
     private final ContentViewRepository contentViewRepository;
     private final MarkdownRenderService markdownRenderService;
     private final ContentImageCleanupService contentImageCleanupService;
+    private final StorageDeletionTaskRepository storageDeletionTaskRepository;
+
+    private static final String ARTICLE_NOT_FOUND_MESSAGE = "Статья не найдена";
 
     @Transactional
     public Long getOrCreateDraft(Long userId) {
@@ -75,31 +76,27 @@ public class ArticleService {
     }
 
     @Transactional
-    public Long publishDraft(ArticleCreateDto articleCreateDto, Long userId) {
+    public void publishDraft(ArticleCreateDto articleCreateDto, Long userId) {
         ContentItem contentItem = getEditableDraft(articleCreateDto.draftId(), userId);
 
         applyDraftData(contentItem, articleCreateDto);
 
-        contentItem.setContentStatus(ContentStatus.PUBLISHED);
+        contentItem.setContentStatus(ContentStatus.PENDING_REVIEW);
 
         contentImageCleanupService.cleanupUnusedImages(
                 contentItem.getId(),
                 List.of(articleCreateDto.text())
         );
-
-        return contentItem.getId();
     }
 
     @Transactional
     public ArticleView getArticleView(Long contentItemId, Long userId) {
         Article article = articleRepository.findByContentItemId(contentItemId)
-                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 
         ContentItem contentItem = article.getContentItem();
 
-        if (contentItem.getVisibility() == Visibility.PRIVATE) {
-            checkAccess(contentItem, userId);
-        }
+        checkArticleViewAccess(contentItem, userId);
 
         if (userId != null) {
             contentViewRepository.insertIfNotExists(contentItemId, userId);
@@ -121,11 +118,11 @@ public class ArticleService {
     @Transactional(readOnly = true)
     public ArticleEditView getArticleToEdit(Long contentItemId, Long userId) {
         Article article = articleRepository.findByContentItemId(contentItemId)
-                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 
         ContentItem contentItem = article.getContentItem();
 
-        checkAccess(contentItem, userId);
+        checkArticleEditAccess(contentItem, userId);
 
         return new ArticleEditView(
                 contentItem.getId(),
@@ -138,16 +135,17 @@ public class ArticleService {
     @Transactional
     public void update(ArticleEditDto articleEditDto, Long userId) {
         Article article = articleRepository.findByContentItemId(articleEditDto.contentItemId())
-                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 
         ContentItem contentItem = article.getContentItem();
 
-        checkAccess(contentItem, userId);
+        checkArticleEditAccess(contentItem, userId);
 
         contentItem.setTitle(articleEditDto.title());
         contentItem.setVisibility(articleEditDto.visibility());
         contentItem.setPreview(contentViewService.formatPreviewFromText(articleEditDto.text()));
         contentItem.setUpdatedAt(Instant.now());
+        contentItem.setContentStatus(ContentStatus.PENDING_REVIEW);
 
         article.setText(articleEditDto.text());
 
@@ -165,13 +163,16 @@ public class ArticleService {
     }
 
     @Transactional
-    public void deleteArticle(Long articleId, Long userId) {
-        Article article = articleRepository.findById(articleId)
-                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+    public void deleteArticle(Long contentItemId, Long userId) {
+        ContentItem contentItem = contentItemRepository.findByIdAndOwnerIdAndItemType(
+                contentItemId,
+                userId,
+                ItemType.ARTICLE
+        ).orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 
-        ContentItem contentItem = article.getContentItem();
-
-        checkAccess(contentItem, userId);
+        storageDeletionTaskRepository.save(
+                StorageDeletionTask.createContentDirectoryDeletion(contentItem.getId())
+        );
 
         contentItemRepository.delete(contentItem);
     }
@@ -221,32 +222,57 @@ public class ArticleService {
         );
     }
 
-    private void checkAccess(ContentItem contentItem, Long userId) {
-        if (userId == null) {
-            throw new ForbiddenException("Доступ к статье запрещен");
+    private void checkArticleViewAccess(ContentItem contentItem, Long userId) {
+        ContentStatus status = contentItem.getContentStatus();
+
+        switch (status) {
+            case DRAFT -> throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
+
+            case PENDING_REVIEW, REJECTED -> {
+                if (!isOwner(contentItem, userId)) {
+                    throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
+                }
+            }
+
+            case PUBLISHED -> {
+                if (contentItem.getVisibility() == Visibility.PRIVATE
+                        && !isOwner(contentItem, userId)) {
+                    throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
+                }
+            }
+
+            default -> throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
+        }
+    }
+
+    private void checkArticleEditAccess(ContentItem contentItem, Long userId) {
+        if (!isOwner(contentItem, userId)) {
+            throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
         }
 
-        if (!contentItem.getOwner().getId().equals(userId)) {
-            log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
-            throw new ForbiddenException("Доступ к статье запрещен");
+        switch (contentItem.getContentStatus()) {
+            case DRAFT -> throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
+
+            case PENDING_REVIEW -> throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
+
+            case PUBLISHED, REJECTED -> {
+                // редактирование разрешено владельцу
+            }
+
+            default -> throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
         }
+    }
+
+    public boolean isOwner(ContentItem contentItem, Long userId) {
+        return contentItem.getOwner().getId().equals(userId);
     }
 
     private ContentItem getEditableDraft(Long draftId, Long userId) {
-        ContentItem contentItem = contentItemRepository.findById(draftId)
+        return contentItemRepository.findDraftByIdAndOwnerId(draftId, userId, ItemType.ARTICLE)
                 .orElseThrow(() -> new NotFoundException("Контент не найден"));
-
-        checkAccess(contentItem, userId);
-
-        if (contentItem.getContentStatus() == ContentStatus.PUBLISHED) {
-            log.debug("Access is denied, article has already been published contentItemId={}", contentItem.getId());
-            throw new ArticleAlreadyPublished(contentItem.getId());
-        }
-
-        return contentItem;
     }
 
-    private Article applyDraftData(ContentItem contentItem, ArticleCreateDto dto) {
+    private void applyDraftData(ContentItem contentItem, ArticleCreateDto dto) {
         contentItem.setTitle(dto.title());
         contentItem.setPreview(contentViewService.formatPreviewFromText(dto.text()));
         contentItem.setVisibility(dto.visibility());
@@ -260,7 +286,7 @@ public class ArticleService {
 
         article.setText(dto.text());
 
-        return articleRepository.save(article);
+        articleRepository.save(article);
     }
 
 
@@ -277,10 +303,10 @@ public class ArticleService {
 //    @Transactional(readOnly = true)
 //    public ArticleResponse getArticleById(Long contentItemId) {
 //        ContentItem contentItem = contentItemRepository.findById(contentItemId)
-//                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+//                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 //
 //        Article article = articleRepository.findByContentItem(contentItem)
-//                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+//                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 //
 //        return toResponse(article);
 //    }
@@ -315,10 +341,10 @@ public class ArticleService {
 //    @Transactional
 //    public ArticleResponse updateArticle(Long userId, Long contentItemId, ArticleUpdateRequest request) {
 //        ContentItem contentItem = contentItemRepository.findById(contentItemId)
-//                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+//                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 //
 //        Article article = articleRepository.findByContentItem(contentItem)
-//                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+//                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 //
 //
 //        if (!contentItem.getOwner().getId().equals(userId)) {
@@ -338,10 +364,10 @@ public class ArticleService {
 //    @Transactional
 //    public void deleteArticle(Long userId, Long contentItemId) {
 //        ContentItem contentItem = contentItemRepository.findById(contentItemId)
-//                .orElseThrow(() -> new NotFoundException("Статья не найдена"));
+//                .orElseThrow(() -> new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE));
 //
 //        if (contentItem.getItemType() != ItemType.ARTICLE) {
-//            throw new NotFoundException("Статья не найдена");
+//            throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
 //        }
 //
 //        if (!contentItem.getOwner().getId().equals(userId)) {

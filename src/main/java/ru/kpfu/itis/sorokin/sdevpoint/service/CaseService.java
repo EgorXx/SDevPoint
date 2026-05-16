@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.CaseAlreadyPublished;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
@@ -35,6 +34,9 @@ public class CaseService {
     private final ContentViewService contentViewService;
     private final MarkdownRenderService markdownRenderService;
     private final ContentImageCleanupService contentImageCleanupService;
+    private final StorageDeletionTaskRepository storageDeletionTaskRepository;
+
+    private static final String CASE_NOT_FOUND_MESSAGE = "Кейс не найден";
 
 
     @Transactional
@@ -92,31 +94,27 @@ public class CaseService {
     }
 
     @Transactional
-    public Long publishDraft(CaseCreateDto caseCreateDto, Long userId) {
+    public void publishDraft(CaseCreateDto caseCreateDto, Long userId) {
         ContentItem contentItem = getEditableDraft(caseCreateDto.draftId(), userId);
 
         applyDraftData(contentItem, caseCreateDto);
 
-        contentItem.setContentStatus(ContentStatus.PUBLISHED);
+        contentItem.setContentStatus(ContentStatus.PENDING_REVIEW);
 
         contentImageCleanupService.cleanupUnusedImages(
                 contentItem.getId(),
                 List.of(caseCreateDto.description(), caseCreateDto.solution())
         );
-
-        return contentItem.getId();
     }
 
     @Transactional
     public CaseView getCaseView(Long contentItemId, Long userId) {
         Case caseEntity = caseRepository.findByContentItemId(contentItemId)
-                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+                .orElseThrow(() -> new NotFoundException(CASE_NOT_FOUND_MESSAGE));
 
         ContentItem contentItem = caseEntity.getContentItem();
 
-        if (contentItem.getVisibility() == Visibility.PRIVATE) {
-            checkAccess(contentItem, userId);
-        }
+        checkCaseViewAccess(contentItem, userId);
 
         if (userId != null) {
             contentViewRepository.insertIfNotExists(contentItemId, userId);
@@ -138,17 +136,8 @@ public class CaseService {
     }
 
     private ContentItem getEditableDraft(Long draftId, Long userId) {
-        ContentItem contentItem = contentItemRepository.findById(draftId)
+        return contentItemRepository.findDraftByIdAndOwnerId(draftId, userId, ItemType.CASE)
                 .orElseThrow(() -> new NotFoundException("Контент не найден"));
-
-        checkAccess(contentItem, userId);
-
-        if (contentItem.getContentStatus() == ContentStatus.PUBLISHED) {
-            log.debug("Access is denied, case has already been published contentItemId={}", contentItem.getId());
-            throw new CaseAlreadyPublished(draftId);
-        }
-
-        return contentItem;
     }
 
     private Case applyDraftData(ContentItem contentItem, CaseCreateDto dto) {
@@ -170,25 +159,14 @@ public class CaseService {
         return caseRepository.save(caseEntity);
     }
 
-    private void checkAccess(ContentItem contentItem, Long userId) {
-        if (userId == null) {
-            throw new ForbiddenException("Доступ к кейсу запрещен");
-        }
-
-        if (!contentItem.getOwner().getId().equals(userId)) {
-            log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
-            throw new ForbiddenException("Доступ к кейсу запрещен");
-        }
-    }
-
     @Transactional(readOnly = true)
     public CaseEditView getCaseToEdit(Long contentId, Long userId) {
         Case caseEntity = caseRepository.findByContentItemId(contentId)
-                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+                .orElseThrow(() -> new NotFoundException(CASE_NOT_FOUND_MESSAGE));
 
         ContentItem contentItem = caseEntity.getContentItem();
 
-        checkAccess(contentItem, userId);
+        checkCaseEditAccess(contentItem, userId);
 
         return new CaseEditView(
                 contentId,
@@ -203,16 +181,17 @@ public class CaseService {
     @Transactional
     public void update(CaseEditDto caseEditDto, Long userId) {
         Case caseEntity = caseRepository.findByContentItemId(caseEditDto.contentItemId())
-                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+                .orElseThrow(() -> new NotFoundException(CASE_NOT_FOUND_MESSAGE));
 
         ContentItem contentItem = caseEntity.getContentItem();
 
-        checkAccess(contentItem, userId);
+        checkCaseEditAccess(contentItem, userId);
 
         contentItem.setTitle(caseEditDto.title());
         contentItem.setVisibility(caseEditDto.visibility());
         contentItem.setPreview(contentViewService.formatPreviewFromText(caseEditDto.description()));
         contentItem.setUpdatedAt(Instant.now());
+        contentItem.setContentStatus(ContentStatus.PENDING_REVIEW);
 
         caseEntity.setDescription(caseEditDto.description());
         caseEntity.setSolution(caseEditDto.hasSolution() ? caseEditDto.solution() : "");
@@ -224,13 +203,16 @@ public class CaseService {
     }
 
     @Transactional
-    public void deleteCase(Long contentId, Long userId) {
-        Case caseEntity = caseRepository.findByContentItemId(contentId)
-                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+    public void deleteCase(Long contentItemId, Long userId) {
+        ContentItem contentItem = contentItemRepository.findByIdAndOwnerIdAndItemType(
+                contentItemId,
+                userId,
+                ItemType.CASE
+        ).orElseThrow(() -> new NotFoundException(CASE_NOT_FOUND_MESSAGE));
 
-        ContentItem contentItem = caseEntity.getContentItem();
-
-        checkAccess(contentItem, userId);
+        storageDeletionTaskRepository.save(
+                StorageDeletionTask.createContentDirectoryDeletion(contentItem.getId())
+        );
 
         contentItemRepository.delete(contentItem);
     }
@@ -278,5 +260,50 @@ public class CaseService {
                 contentItems.hasPrevious(),
                 contentItems.hasNext()
         );
+    }
+
+    private void checkCaseViewAccess(ContentItem contentItem, Long userId) {
+        ContentStatus status = contentItem.getContentStatus();
+
+        switch (status) {
+            case DRAFT -> throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+
+            case PENDING_REVIEW, REJECTED -> {
+                if (!isOwner(contentItem, userId)) {
+                    throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+                }
+            }
+
+            case PUBLISHED -> {
+                if (contentItem.getVisibility() == Visibility.PRIVATE
+                        && !isOwner(contentItem, userId)) {
+                    throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+                }
+            }
+
+            default -> throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+        }
+    }
+
+    private void checkCaseEditAccess(ContentItem contentItem, Long userId) {
+        if (!isOwner(contentItem, userId)) {
+            throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+        }
+
+        switch (contentItem.getContentStatus()) {
+            case DRAFT -> throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+
+            case PENDING_REVIEW -> throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+
+            case PUBLISHED, REJECTED -> {
+                // редактирование разрешено владельцу
+            }
+
+            default -> throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
+        }
+    }
+
+    public boolean isOwner(ContentItem contentItem, Long userId) {
+        return contentItem.getOwner().getId().equals(userId);
     }
 }

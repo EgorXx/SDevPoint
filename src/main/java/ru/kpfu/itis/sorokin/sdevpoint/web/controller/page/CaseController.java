@@ -134,12 +134,12 @@ public class CaseController {
                 caseCreateForm.visibility()
         );
 
-        Long contentId = caseService.publishDraft(
+        caseService.publishDraft(
                 caseCreateDto,
                 customUserDetails.getUserId()
         );
 
-        return "redirect:/cases/" + contentId;
+        return "redirect:/my-content";
     }
 
     @GetMapping("/cases/{contentId}")
@@ -212,6 +212,6 @@ public class CaseController {
 
         caseService.update(caseEditDto, customUserDetails.getUserId());
 
-        return "redirect:/cases/" + contentId;
+        return "redirect:/my-content";
     }
 }

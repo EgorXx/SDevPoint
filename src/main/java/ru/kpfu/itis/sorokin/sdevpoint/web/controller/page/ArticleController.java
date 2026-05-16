@@ -91,9 +91,12 @@ public class ArticleController {
                 articleCreateForm.visibility()
         );
 
-        Long contentId = articleService.publishDraft(articleCreateDto, customUserDetails.getUserId());
+        articleService.publishDraft(
+                articleCreateDto,
+                customUserDetails.getUserId()
+        );
 
-        return "redirect:/articles/" + contentId;
+        return "redirect:/my-content";
     }
 
     @GetMapping("/articles/{contentId}")
@@ -167,7 +170,7 @@ public class ArticleController {
 
         articleService.update(articleEditDto, customUserDetails.getUserId());
 
-        return "redirect:/articles/" + contentId;
+        return "redirect:/my-content";
     }
 
     @GetMapping("/articles/public")

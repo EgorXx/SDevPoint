@@ -6,7 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.ContentCardView;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.PublishedContentCardView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.FavoritePageView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
@@ -37,8 +37,8 @@ public class FavoriteService {
 
         Page<Favorite> favorites = favoriteRepository.findByUserId(currentUserId, pageable);
 
-        List<ContentCardView> contentCardViews = favorites.map(
-                favorite -> new ContentCardView(
+        List<PublishedContentCardView> publishedContentCardViews = favorites.map(
+                favorite -> new PublishedContentCardView(
                         favorite.getContentItem().getId(),
                         favorite.getContentItem().getItemType().toString(),
                         getOwner(currentUserId, favorite.getContentItem().getOwner()),
@@ -49,7 +49,7 @@ public class FavoriteService {
                 .toList();
 
         return new FavoritePageView(
-                contentCardViews,
+                publishedContentCardViews,
                 favorites.getNumber(),
                 favorites.getSize(),
                 favorites.getTotalElements(),

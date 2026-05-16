@@ -16,10 +16,13 @@ public class ArticleAjaxController {
 
     @DeleteMapping("/articles/{contentId}")
     public ResponseEntity<Void> deleteArticle(
-            @PathVariable("contentId") Long id,
+            @PathVariable("contentId") Long contentId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
-        articleService.deleteArticle(id, customUserDetails.getUserId());
+        articleService.deleteArticle(
+                contentId,
+                customUserDetails.getUserId()
+        );
 
         return ResponseEntity.noContent().build();
     }
