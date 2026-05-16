@@ -9,6 +9,7 @@ group = "ru.kpfu.itis.sorokin"
 version = "0.0.1-SNAPSHOT"
 
 val postgresql: String by project
+val flexmarkVersion: String by project
 
 java {
 	toolchain {
@@ -37,7 +38,11 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-freemarker")
 	implementation("org.postgresql:postgresql:$postgresql")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
-	implementation("org.commonmark:commonmark:0.28.0")
+	implementation("com.vladsch.flexmark:flexmark:${flexmarkVersion}")
+	implementation("com.vladsch.flexmark:flexmark-ext-tables:${flexmarkVersion}")
+	implementation("com.vladsch.flexmark:flexmark-ext-gfm-strikethrough:${flexmarkVersion}")
+	implementation("com.vladsch.flexmark:flexmark-ext-gfm-tasklist:${flexmarkVersion}")
+	implementation("com.vladsch.flexmark:flexmark-ext-autolink:${flexmarkVersion}")
 	implementation("org.jsoup:jsoup:1.21.2")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

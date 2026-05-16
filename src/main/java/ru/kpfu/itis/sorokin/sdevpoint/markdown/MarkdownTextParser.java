@@ -1,9 +1,30 @@
 package ru.kpfu.itis.sorokin.sdevpoint.markdown;
 
-import org.commonmark.node.*;
-import org.commonmark.parser.Parser;
+import com.vladsch.flexmark.ast.BlockQuote;
+import com.vladsch.flexmark.ast.Code;
+import com.vladsch.flexmark.ast.FencedCodeBlock;
+import com.vladsch.flexmark.ast.HardLineBreak;
+import com.vladsch.flexmark.ast.Heading;
+import com.vladsch.flexmark.ast.HtmlBlock;
+import com.vladsch.flexmark.ast.HtmlInline;
+import com.vladsch.flexmark.ast.Image;
+import com.vladsch.flexmark.ast.IndentedCodeBlock;
+import com.vladsch.flexmark.ast.Link;
+import com.vladsch.flexmark.ast.ListItem;
+import com.vladsch.flexmark.ast.Paragraph;
+import com.vladsch.flexmark.ast.SoftLineBreak;
+import com.vladsch.flexmark.ast.Text;
+import com.vladsch.flexmark.ast.ThematicBreak;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
+import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension;
+import com.vladsch.flexmark.ext.tables.TablesExtension;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.ast.Node;
+import com.vladsch.flexmark.util.data.MutableDataSet;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Component
@@ -15,7 +36,18 @@ public class MarkdownTextParser {
     private static final Pattern MULTIPLE_SPACES =
             Pattern.compile("\\s+");
 
-    private final Parser parser = Parser.builder().build();
+    private static final Pattern MARK_SYNTAX =
+            Pattern.compile("==([^=\\n]+)==");
+
+    private final MutableDataSet options = new MutableDataSet()
+            .set(Parser.EXTENSIONS, List.of(
+                    TablesExtension.create(),
+                    StrikethroughExtension.create(),
+                    TaskListExtension.create(),
+                    AutolinkExtension.create()
+            ));
+
+    private final Parser parser = Parser.builder(options).build();
 
     public String parse(String markdown, int maxLength) {
         if (markdown == null || markdown.isBlank()) {
@@ -26,11 +58,15 @@ public class MarkdownTextParser {
             throw new IllegalArgumentException("maxLength must be >= 0");
         }
 
-        String withoutFrontMatter = FRONT_MATTER.matcher(markdown).replaceFirst("");
+        String withoutFrontMatter = FRONT_MATTER.matcher(markdown)
+                .replaceFirst("");
 
         Node document = parser.parse(withoutFrontMatter);
 
         String text = new PlainTextVisitor().extract(document);
+
+        text = MARK_SYNTAX.matcher(text)
+                .replaceAll("$1");
 
         text = MULTIPLE_SPACES.matcher(text)
                 .replaceAll(" ")
@@ -59,92 +95,83 @@ public class MarkdownTextParser {
         return text.substring(0, endIndex).stripTrailing() + "…";
     }
 
-    private static final class PlainTextVisitor extends AbstractVisitor {
+    private static final class PlainTextVisitor {
 
         private final StringBuilder result = new StringBuilder();
 
         public String extract(Node node) {
-            node.accept(this);
+            visit(node);
             return result.toString();
         }
 
-        @Override
-        public void visit(Text text) {
-            append(text.getLiteral());
+        private void visit(Node node) {
+            if (node == null) {
+                return;
+            }
+
+            if (node instanceof Text text) {
+                append(text.getChars().toString());
+                return;
+            }
+
+            if (node instanceof Code code) {
+                append(code.getText().toString());
+                return;
+            }
+
+            if (node instanceof FencedCodeBlock codeBlock) {
+                appendWithSpace(codeBlock.getContentChars().toString());
+                return;
+            }
+
+            if (node instanceof IndentedCodeBlock codeBlock) {
+                appendWithSpace(codeBlock.getContentChars().toString());
+                return;
+            }
+
+            if (node instanceof SoftLineBreak || node instanceof HardLineBreak) {
+                appendSpace();
+                return;
+            }
+
+            if (node instanceof Image) {
+                return;
+            }
+
+            if (node instanceof HtmlInline || node instanceof HtmlBlock) {
+                return;
+            }
+
+            if (node instanceof ThematicBreak) {
+                appendSpace();
+                return;
+            }
+
+            if (node instanceof Link) {
+                visitChildren(node);
+                return;
+            }
+
+            if (node instanceof Paragraph
+                    || node instanceof Heading
+                    || node instanceof BlockQuote
+                    || node instanceof ListItem) {
+                visitChildren(node);
+                appendSpace();
+                return;
+            }
+
+            visitChildren(node);
         }
 
-        @Override
-        public void visit(Code code) {
-            append(code.getLiteral());
-        }
+        private void visitChildren(Node parent) {
+            Node child = parent.getFirstChild();
 
-        @Override
-        public void visit(FencedCodeBlock codeBlock) {
-            appendWithSpace(codeBlock.getLiteral());
-        }
-
-        @Override
-        public void visit(IndentedCodeBlock codeBlock) {
-            appendWithSpace(codeBlock.getLiteral());
-        }
-
-        @Override
-        public void visit(SoftLineBreak softLineBreak) {
-            appendSpace();
-        }
-
-        @Override
-        public void visit(HardLineBreak hardLineBreak) {
-            appendSpace();
-        }
-
-        @Override
-        public void visit(Paragraph paragraph) {
-            visitChildren(paragraph);
-            appendSpace();
-        }
-
-        @Override
-        public void visit(Heading heading) {
-            visitChildren(heading);
-            appendSpace();
-        }
-
-        @Override
-        public void visit(BlockQuote blockQuote) {
-            visitChildren(blockQuote);
-            appendSpace();
-        }
-
-        @Override
-        public void visit(ListItem listItem) {
-            visitChildren(listItem);
-            appendSpace();
-        }
-
-        @Override
-        public void visit(Link link) {
-            visitChildren(link);
-        }
-
-        @Override
-        public void visit(Image image) {
-            // image alt text не добавляем
-        }
-
-        @Override
-        public void visit(HtmlInline htmlInline) {
-            // HTML-теги в plain text не добавляем
-        }
-
-        @Override
-        public void visit(HtmlBlock htmlBlock) {
-            // HTML-блоки в plain text не добавляем
-        }
-
-        @Override
-        public void visit(ThematicBreak thematicBreak) {
-            appendSpace();
+            while (child != null) {
+                Node next = child.getNext();
+                visit(child);
+                child = next;
+            }
         }
 
         private void append(String value) {
