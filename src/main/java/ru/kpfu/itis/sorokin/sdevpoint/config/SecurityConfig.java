@@ -30,6 +30,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/favorites/content/*").authenticated()
                         .requestMatchers(HttpMethod.GET, "/profile").authenticated()
                         .requestMatchers("/my-content").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll())
                 .formLogin(form -> form.permitAll())
                 .build();

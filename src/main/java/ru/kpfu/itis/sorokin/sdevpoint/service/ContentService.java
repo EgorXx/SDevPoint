@@ -140,4 +140,42 @@ public class ContentService {
 
         contentRejectionCommentRepository.deleteByContentItemId(contentId);
     }
+
+    @Transactional(readOnly = true)
+    public ContentPageView getContentForReview(Long userId, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.clamp(size, 1, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Order.desc("createdAt"))
+        );
+
+        Page<ContentItem> contentItems = contentItemRepository
+                .findByContentStatus(ContentStatus.PENDING_REVIEW, pageable);
+
+        List<ContentCardView> cards = contentItems
+                .map(contentItem -> new ContentCardView(
+                        contentItem.getId(),
+                        contentItem.getItemType().toString(),
+                        contentItem.getOwner().getUsername(),
+                        contentItem.getTitle(),
+                        contentItem.getPreview(),
+                        contentViewService.formatDate(contentItem.getCreatedAt()),
+                        contentItem.getContentStatus().toString(),
+                        contentItem.getVisibility().toString()
+                ))
+                .toList();
+
+        return new ContentPageView(
+                cards,
+                contentItems.getNumber(),
+                contentItems.getSize(),
+                contentItems.getTotalElements(),
+                contentItems.getTotalPages(),
+                contentItems.hasPrevious(),
+                contentItems.hasNext()
+        );
+    }
 }

@@ -69,4 +69,7 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
     );
 
     Optional<ContentItem> findByIdAndOwnerIdAndItemType(Long id, Long userId, ItemType itemType);
+
+    @EntityGraph(attributePaths = "owner")
+    Page<ContentItem> findByContentStatus(ContentStatus contentStatus, Pageable pageable);
 }
