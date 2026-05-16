@@ -7,5 +7,7 @@ public record ArticleView(
         String htmlText,
         String createdAt,
         String updatedAt,
-        Long countViews
+        Long countViews,
+        ReactionResponse reactionResponse,
+        boolean reactionsAllowed
 ) {}

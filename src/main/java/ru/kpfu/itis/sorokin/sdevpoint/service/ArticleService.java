@@ -35,6 +35,7 @@ public class ArticleService {
     private final MarkdownRenderService markdownRenderService;
     private final ContentImageCleanupService contentImageCleanupService;
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
+    private final ReactionService reactionService;
 
     private static final String ARTICLE_NOT_FOUND_MESSAGE = "Статья не найдена";
 
@@ -104,6 +105,13 @@ public class ArticleService {
 
         long countViews = contentViewRepository.countViewsContent(contentItemId);
 
+        ReactionResponse reactionResponse = reactionService.getReactionInfo(
+                contentItemId,
+                userId
+        );
+
+        boolean reactionAllowed = contentItem.getContentStatus() == ContentStatus.PUBLISHED;
+
         return new ArticleView(
                 contentItem.getId(),
                 contentItem.getTitle(),
@@ -111,7 +119,9 @@ public class ArticleService {
                 markdownRenderService.renderToSafeHtml(article.getText()),
                 contentViewService.formatDate(contentItem.getCreatedAt()),
                 contentViewService.formatDate(contentItem.getUpdatedAt()),
-                countViews
+                countViews,
+                reactionResponse,
+                reactionAllowed
         );
     }
 

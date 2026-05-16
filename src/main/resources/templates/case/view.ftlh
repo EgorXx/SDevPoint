@@ -259,6 +259,49 @@
             border-top: 1px solid var(--border);
         }
 
+        .case-reactions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .reaction-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 38px;
+            padding: 8px 13px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #ffffff;
+            color: var(--text-main);
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .reaction-button:hover {
+            border-color: #cbd5e1;
+            background: #f9fafb;
+        }
+
+        .reaction-button.active-like {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .reaction-button.active-dislike {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .reaction-button:disabled {
+            cursor: default;
+            opacity: 0.65;
+        }
+
         .empty-content {
             color: var(--text-muted);
             font-style: italic;
@@ -301,6 +344,27 @@
                 <span>Обновлено: ${currentCase.updatedAt()}</span>
                 <span class="case-views">Просмотры: ${(currentCase.countViews())!0}</span>
             </div>
+
+            <#if currentCase.reactionsAllowed()>
+                <#assign reaction = currentCase.reactionResponse()>
+                <#assign currentReaction = ((reaction.currentReaction())!'')?string>
+
+                <div class="case-reactions">
+                    <button
+                            id="likeButton"
+                            class="reaction-button <#if currentReaction == 'LIKE'>active-like</#if>"
+                            type="button">
+                        👍 <span id="likesCount">${reaction.likesCount()}</span>
+                    </button>
+
+                    <button
+                            id="dislikeButton"
+                            class="reaction-button <#if currentReaction == 'DISLIKE'>active-dislike</#if>"
+                            type="button">
+                        👎 <span id="dislikesCount">${reaction.dislikesCount()}</span>
+                    </button>
+                </div>
+            </#if>
         </header>
 
         <section class="section">
@@ -355,10 +419,19 @@
 </main>
 
 <script>
-    const toggleSolutionButton = document.getElementById("toggleSolutionButton");
-    const solutionContent = document.getElementById("solutionContent");
+    document.addEventListener("DOMContentLoaded", function () {
+        initSolutionToggle();
+        initReactions();
+    });
 
-    if (toggleSolutionButton && solutionContent) {
+    function initSolutionToggle() {
+        const toggleSolutionButton = document.getElementById("toggleSolutionButton");
+        const solutionContent = document.getElementById("solutionContent");
+
+        if (!toggleSolutionButton || !solutionContent) {
+            return;
+        }
+
         toggleSolutionButton.addEventListener("click", function () {
             const isHidden = solutionContent.hidden;
 
@@ -367,6 +440,94 @@
             toggleSolutionButton.textContent = isHidden
                 ? "Скрыть решение"
                 : "Показать решение";
+        });
+    }
+
+    function initReactions() {
+        const contentItemId = "${currentCase.contentId()}";
+
+        const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
+        const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+
+        const likeButton = document.getElementById("likeButton");
+        const dislikeButton = document.getElementById("dislikeButton");
+        const likesCount = document.getElementById("likesCount");
+        const dislikesCount = document.getElementById("dislikesCount");
+
+        if (!likeButton || !dislikeButton || !likesCount || !dislikesCount) {
+            return;
+        }
+
+        function buildHeaders() {
+            const headers = {};
+
+            if (csrfHeaderName && csrfToken) {
+                headers[csrfHeaderName] = csrfToken;
+            }
+
+            return headers;
+        }
+
+        function setButtonsDisabled(disabled) {
+            likeButton.disabled = disabled;
+            dislikeButton.disabled = disabled;
+        }
+
+        function updateReactionView(reaction) {
+            likesCount.textContent = reaction.likesCount;
+            dislikesCount.textContent = reaction.dislikesCount;
+
+            likeButton.classList.remove("active-like");
+            dislikeButton.classList.remove("active-dislike");
+
+            if (reaction.currentReaction === "LIKE") {
+                likeButton.classList.add("active-like");
+            }
+
+            if (reaction.currentReaction === "DISLIKE") {
+                dislikeButton.classList.add("active-dislike");
+            }
+        }
+
+        async function sendReaction(type) {
+            const url = "/api/content-items/" + contentItemId + "/reactions/" + type;
+
+            setButtonsDisabled(true);
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: buildHeaders()
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = "/login";
+                    return;
+                }
+
+                if (!response.ok) {
+                    alert("Не удалось обновить реакцию");
+                    setButtonsDisabled(false);
+                    return;
+                }
+
+                const reaction = await response.json();
+
+                updateReactionView(reaction);
+                setButtonsDisabled(false);
+            } catch (e) {
+                console.error(e);
+                alert("Не удалось обновить реакцию");
+                setButtonsDisabled(false);
+            }
+        }
+
+        likeButton.addEventListener("click", function () {
+            sendReaction("like");
+        });
+
+        dislikeButton.addEventListener("click", function () {
+            sendReaction("dislike");
         });
     }
 </script>

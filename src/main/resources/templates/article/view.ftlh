@@ -189,6 +189,49 @@
             font-weight: 600;
         }
 
+        .article-reactions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .reaction-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 38px;
+            padding: 8px 13px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #ffffff;
+            color: var(--text-main);
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .reaction-button:hover {
+            border-color: #cbd5e1;
+            background: #f9fafb;
+        }
+
+        .reaction-button.active-like {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .reaction-button.active-dislike {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .reaction-button:disabled {
+            cursor: default;
+            opacity: 0.65;
+        }
+
         .empty-content {
             color: var(--text-muted);
             font-style: italic;
@@ -214,8 +257,97 @@
         }
     </style>
 </head>
-<body>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const contentItemId = "${article.id()}";
 
+        const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
+        const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+
+        const likeButton = document.getElementById("likeButton");
+        const dislikeButton = document.getElementById("dislikeButton");
+        const likesCount = document.getElementById("likesCount");
+        const dislikesCount = document.getElementById("dislikesCount");
+
+        if (!likeButton || !dislikeButton || !likesCount || !dislikesCount) {
+            console.error("Reaction elements not found");
+            return;
+        }
+
+        function buildHeaders() {
+            const headers = {};
+
+            if (csrfHeaderName && csrfToken) {
+                headers[csrfHeaderName] = csrfToken;
+            }
+
+            return headers;
+        }
+
+        function setButtonsDisabled(disabled) {
+            likeButton.disabled = disabled;
+            dislikeButton.disabled = disabled;
+        }
+
+        function updateReactionView(reaction) {
+            likesCount.textContent = reaction.likesCount;
+            dislikesCount.textContent = reaction.dislikesCount;
+
+            likeButton.classList.remove("active-like");
+            dislikeButton.classList.remove("active-dislike");
+
+            if (reaction.currentReaction === "LIKE") {
+                likeButton.classList.add("active-like");
+            }
+
+            if (reaction.currentReaction === "DISLIKE") {
+                dislikeButton.classList.add("active-dislike");
+            }
+        }
+
+        async function sendReaction(type) {
+            const url = "/api/content-items/" + contentItemId + "/reactions/" + type;
+
+            setButtonsDisabled(true);
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: buildHeaders()
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = "/login";
+                    return;
+                }
+
+                if (!response.ok) {
+                    alert("Не удалось обновить реакцию");
+                    setButtonsDisabled(false);
+                    return;
+                }
+
+                const reaction = await response.json();
+
+                updateReactionView(reaction);
+                setButtonsDisabled(false);
+            } catch (e) {
+                console.error(e);
+                alert("Не удалось обновить реакцию");
+                setButtonsDisabled(false);
+            }
+        }
+
+        likeButton.addEventListener("click", function () {
+            sendReaction("like");
+        });
+
+        dislikeButton.addEventListener("click", function () {
+            sendReaction("dislike");
+        });
+    });
+</script>
+<body>
 <main class="page">
     <article class="article">
         <header class="article-header">
@@ -227,6 +359,27 @@
                 <span>Обновлено: ${article.updatedAt()}</span>
                 <span class="article-views">Просмотры: ${(article.countViews())!0}</span>
             </div>
+
+            <#if article.reactionsAllowed()>
+                <#assign reaction = article.reactionResponse()>
+                <#assign currentReaction = ((reaction.currentReaction())!'')?string>
+
+                <div class="article-reactions">
+                    <button
+                            id="likeButton"
+                            class="reaction-button <#if currentReaction == 'LIKE'>active-like</#if>"
+                            type="button">
+                        👍 <span id="likesCount">${reaction.likesCount()}</span>
+                    </button>
+
+                    <button
+                            id="dislikeButton"
+                            class="reaction-button <#if currentReaction == 'DISLIKE'>active-dislike</#if>"
+                            type="button">
+                        👎 <span id="dislikesCount">${reaction.dislikesCount()}</span>
+                    </button>
+                </div>
+            </#if>
         </header>
 
         <section class="article-content">

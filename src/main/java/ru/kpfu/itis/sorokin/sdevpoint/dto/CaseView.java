@@ -9,5 +9,7 @@ public record CaseView(
         String htmlTextSolution,
         String createdAt,
         String updatedAt,
-        Long countViews
+        Long countViews,
+        ReactionResponse reactionResponse,
+        boolean reactionsAllowed
 ) {}

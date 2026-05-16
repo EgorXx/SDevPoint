@@ -35,6 +35,7 @@ public class CaseService {
     private final MarkdownRenderService markdownRenderService;
     private final ContentImageCleanupService contentImageCleanupService;
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
+    private final ReactionService reactionService;
 
     private static final String CASE_NOT_FOUND_MESSAGE = "Кейс не найден";
 
@@ -122,6 +123,13 @@ public class CaseService {
 
         long countViews = contentViewRepository.countViewsContent(contentItemId);
 
+        ReactionResponse reactionResponse = reactionService.getReactionInfo(
+                contentItemId,
+                userId
+        );
+
+        boolean reactionAllowed = contentItem.getContentStatus() == ContentStatus.PUBLISHED;
+
         return new CaseView(
                 contentItem.getId(),
                 contentItem.getTitle(),
@@ -131,7 +139,9 @@ public class CaseService {
                 markdownRenderService.renderToSafeHtml(caseEntity.getSolution()),
                 contentViewService.formatDate(contentItem.getCreatedAt()),
                 contentViewService.formatDate(contentItem.getUpdatedAt()),
-                countViews
+                countViews,
+                reactionResponse,
+                reactionAllowed
         );
     }
 
