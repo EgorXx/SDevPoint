@@ -1,4 +1,4 @@
-package ru.kpfu.itis.sorokin.sdevpoint.controller;
+package ru.kpfu.itis.sorokin.sdevpoint.web.controller.page;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -15,7 +15,6 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.EmailAlreadyExistsException;
 import ru.kpfu.itis.sorokin.sdevpoint.service.EmailVerificationService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.UserService;
 
-import java.net.URI;
 import java.util.UUID;
 
 @Slf4j
@@ -24,6 +23,11 @@ import java.util.UUID;
 public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final UserService userService;
+
+    @GetMapping("/auth/login")
+    public String login() {
+        return "auth/login";
+    }
 
     @GetMapping("/auth/confirm")
     public String confirmEmail(
