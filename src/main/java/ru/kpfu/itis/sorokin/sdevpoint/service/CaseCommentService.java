@@ -1,7 +1,5 @@
 package ru.kpfu.itis.sorokin.sdevpoint.service;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,8 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.CaseCommentView;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.CaseDiscussionPageView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.DraftContentAccessException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
@@ -33,17 +29,19 @@ public class CaseCommentService {
     private final ContentViewService contentViewService;
     private final UserRepository userRepository;
     private final MarkdownRenderService markdownRenderService;
+    private final CommentLimitService commentLimitService;
+    private final AvatarService avatarService;
 
     @Transactional(readOnly = true)
     public CaseDiscussionPageView getDiscussionPage(Long userId, Long contentId, int page, int size) {
         Case caseEntity = caseRepository.findByContentItemId(contentId)
-                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+                .orElseThrow(() -> new NotFoundException("Обсуждение не найдено"));
 
         boolean isAdmin = userId != null && userRepository.existsByIdAndRole(userId, Role.ROLE_ADMIN);
 
         ContentItem contentItem = caseEntity.getContentItem();
 
-        checkAccess(contentItem, userId);
+        checkCaseDiscussionAccess(contentItem, userId);
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.clamp(size, 1, 50);
@@ -62,7 +60,9 @@ public class CaseCommentService {
         List<CaseCommentView> caseCommentViews = caseComments.map(
                 caseComment -> new CaseCommentView(
                         caseComment.getId(),
+                        caseComment.getUser().getId(),
                         caseComment.getUser().getUsername(),
+                        avatarService.getAvatarUrl(caseComment.getUser().getAvatarKey()),
                         contentViewService.formatDate(caseComment.getCreatedAt()),
                         caseComment.getText(),
                         isCanDelete(userId, isAdmin, caseComment),
@@ -98,20 +98,13 @@ public class CaseCommentService {
                 .equals(caseComment.getUser().getId());
     }
 
-    private void checkAccess(ContentItem contentItem, Long userId) {
-        if (contentItem.getContentStatus() == ContentStatus.DRAFT) {
-            if (isOwner(contentItem, userId)) {
-                throw new DraftContentAccessException(
-                        contentItem.getId(),
-                        contentItem.getItemType()
-                );
-            }
-
-            throw new NotFoundException("Контент не найден");
+    private void checkCaseDiscussionAccess(ContentItem contentItem, Long userId) {
+        if (contentItem.getContentStatus() != ContentStatus.PUBLISHED) {
+            throw new NotFoundException("Обсуждение не найдено");
         }
 
         if (contentItem.getVisibility() == Visibility.PRIVATE && !isOwner(contentItem, userId)) {
-            throw new NotFoundException("Контент не найден");
+            throw new NotFoundException("Обсуждение не найдено");
         }
     }
 
@@ -124,15 +117,13 @@ public class CaseCommentService {
     @Transactional
     public void createComment(String text, Long contentId, Long userId) {
         Case caseEntity = caseRepository.findByContentItemId(contentId)
-                .orElseThrow(() -> new NotFoundException("Кейс не найден"));
+                .orElseThrow(() -> new NotFoundException("Обсуждение не найдено"));
 
         ContentItem contentItem = caseEntity.getContentItem();
 
-        checkAccess(contentItem, userId);
+        checkCaseDiscussionAccess(contentItem, userId);
 
-        if (text == null || text.isBlank()) {
-            throw new BadRequestException("Комментарий не должен быть пустым");
-        }
+        commentLimitService.checkCommentCooldown(userId);
 
         String normalizedText = text.trim();
 

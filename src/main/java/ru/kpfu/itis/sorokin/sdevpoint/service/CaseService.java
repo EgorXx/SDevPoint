@@ -36,6 +36,7 @@ public class CaseService {
     private final ContentImageCleanupService contentImageCleanupService;
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
     private final ReactionService reactionService;
+    private final ContentLimitService contentLimitService;
 
     private static final String CASE_NOT_FOUND_MESSAGE = "Кейс не найден";
 
@@ -52,6 +53,8 @@ public class CaseService {
         if (optionalContentItemId.isPresent()) {
             return optionalContentItemId.get();
         }
+
+        contentLimitService.checkCountContentLimit(userId);
 
         ContentItem contentItem = ContentItem.createDraft(owner, ItemType.CASE);
         contentItemRepository.save(contentItem);

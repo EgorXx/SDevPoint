@@ -43,17 +43,4 @@ public class PageExceptionHandler {
                 .badRequest()
                 .body(new ErrorResponse(e.getMessage()));
     }
-
-    @ExceptionHandler(DraftContentAccessException.class)
-    public String handleDraftContentAccess(DraftContentAccessException e) {
-        if (e.getItemType() == ItemType.ARTICLE) {
-            return "redirect:/articles/drafts/" + e.getDraftId() + "/edit";
-        }
-
-        if (e.getItemType() == ItemType.CASE) {
-            return "redirect:/cases/drafts/" + e.getDraftId() + "/edit";
-        }
-
-        return "redirect:/";
-    }
 }

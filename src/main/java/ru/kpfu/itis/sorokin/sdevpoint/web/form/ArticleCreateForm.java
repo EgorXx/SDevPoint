@@ -11,7 +11,7 @@ public record ArticleCreateForm(
         String title,
 
         @NotBlank(message = "Текст статьи не должен быть пустым")
-        @Size(max = 20_000, message = "Текст статьи слишком длинный")
+        @Size(max = 100_000, message = "Текст статьи слишком длинный")
         String text,
 
         @NotNull(message = "Выберите доступность статьи")

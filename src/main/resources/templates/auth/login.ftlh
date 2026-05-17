@@ -168,13 +168,9 @@
     <section class="login-card">
         <h1 class="login-title">Вход</h1>
 
-        <p class="login-description">
-            Войдите в аккаунт, чтобы создавать статьи, кейсы и управлять своим контентом.
-        </p>
-
         <#if RequestParameters.error??>
             <div class="alert alert-error">
-                Неверная почта или пароль. Если вы недавно зарегистрировались, проверьте, подтверждена ли почта.
+                Неверная почта или пароль.
             </div>
         </#if>
 

@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.CaseDiscussionPageView;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CaseCommentService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CustomUserDetails;
 import ru.kpfu.itis.sorokin.sdevpoint.web.form.CaseCommentCreateForm;
@@ -59,7 +60,15 @@ public class CaseDiscussionController {
             return "redirect:/cases/" + contentId + "/comments";
         }
 
-        caseCommentService.createComment(form.text(), contentId, customUserDetails.getUserId());
+        try {
+            caseCommentService.createComment(
+                    form.text(),
+                    contentId,
+                    customUserDetails.getUserId());
+        } catch (BadRequestException e) {
+            redirectAttributes.addFlashAttribute("commentError", e.getMessage());
+            redirectAttributes.addFlashAttribute("commentText", form.text());
+        }
 
         return "redirect:/cases/" + contentId + "/comments";
     }

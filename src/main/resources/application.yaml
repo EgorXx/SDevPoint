@@ -52,6 +52,15 @@ app:
     extension: ".png"
   image-storage:
     path: "storage/images"
+  content:
+    limits:
+      max-content-items-per-user: 100
+      comment-cooldown: 1m
+  image:
+    upload:
+      max-file-size: 7MB
+      max-total-size-per-content: 10MB
+      max-total-size-per-user: 1GB
   email-verification:
     token-lifetime: 15m
     resend-cooldown: 1m

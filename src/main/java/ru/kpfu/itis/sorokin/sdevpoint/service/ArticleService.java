@@ -13,6 +13,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
+import ru.kpfu.itis.sorokin.sdevpoint.properties.ContentLimitProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
 import ru.kpfu.itis.sorokin.sdevpoint.service.clean.ContentImageCleanupService;
 
@@ -36,6 +37,7 @@ public class ArticleService {
     private final ContentImageCleanupService contentImageCleanupService;
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
     private final ReactionService reactionService;
+    private final ContentLimitService contentLimitService;
 
     private static final String ARTICLE_NOT_FOUND_MESSAGE = "Статья не найдена";
 
@@ -51,6 +53,8 @@ public class ArticleService {
         if (optionalContentItemId.isPresent()) {
             return optionalContentItemId.get();
         }
+
+        contentLimitService.checkCountContentLimit(userId);
 
         ContentItem contentItem = ContentItem.createDraft(owner, ItemType.ARTICLE);
         contentItemRepository.save(contentItem);

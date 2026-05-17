@@ -11,13 +11,13 @@ public record CaseCreateForm(
         String title,
 
         @NotBlank(message = "Описание кейса не должно быть пустым")
-        @Size(max = 20_000, message = "Описание кейса слишком длинное")
+        @Size(max = 50_000, message = "Описание кейса слишком длинное")
         String description,
 
         boolean hasSolution,
 
         @NotNull(message = "Решение кейса не должно быть пустым")
-        @Size(max = 20_000, message = "Решение кейса слишком длинное")
+        @Size(max = 100_000, message = "Решение кейса слишком длинное")
         String solution,
 
         @NotNull(message = "Выберите доступность статьи")

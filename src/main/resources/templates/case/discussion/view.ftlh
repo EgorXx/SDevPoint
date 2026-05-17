@@ -227,6 +227,29 @@
             font-size: 16px;
         }
 
+        .comment-author-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #111827;
+            text-decoration: none;
+            font-weight: 650;
+        }
+
+        .comment-author-link:hover {
+            color: var(--link-hover);
+            text-decoration: underline;
+        }
+
+        .comment-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            background: #f3f4f6;
+        }
+
         .delete-comment-button {
             width: 36px;
             height: 36px;
@@ -424,7 +447,18 @@
                 <article class="comment-card" id="comment-${comment.commentId()}">
                     <div class="comment-header">
                         <div class="comment-meta">
-                            <span class="comment-author">${comment.owner()}</span>
+                            <a class="comment-author-link" href="/users/${comment.ownerId()}">
+                                <#if comment.ownerAvatarUrl()?has_content>
+                                    <img
+                                            class="comment-avatar"
+                                            src="${comment.ownerAvatarUrl()}"
+                                            alt="${comment.owner()}"
+                                            loading="lazy"
+                                    >
+                                </#if>
+
+                                <span class="comment-author">${comment.owner()}</span>
+                            </a>
 
                             <#if comment.isAuthor()>
                                 <span class="comment-author-badge">Автор кейса</span>

@@ -13,6 +13,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ImageStorageException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
+import ru.kpfu.itis.sorokin.sdevpoint.properties.ImageUploadProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemImageRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
@@ -34,16 +35,21 @@ public class ImageService {
     private final ContentItemImageRepository contentItemImageRepository;
     private final ImageStorage imageStorage;
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
+    private final ImageUploadProperties imageUploadProperties;
 
-    private static final long SIZE_LIMIT = 5L * 1024 * 1024;
 
+    @Transactional
     public ImageUploadResponse upload(MultipartFile image, Long contentItemId, Long userId) {
-        ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
+        ValidatedImage validatedImage = validateUploadImage(image);
+
+        ContentItem contentItem = contentItemRepository
+                .findByIdForImageUpload(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Контент не найден"));
 
         checkOwner(contentItem, userId);
 
-        ValidatedImage validatedImage = validateUploadImage(image);
+        long newTotalSize = checkImageLimits(contentItemId, userId, validatedImage.size());
+
         UUID publicId = UUID.randomUUID();
 
         StoredImageInfo storedImageInfo;
@@ -80,10 +86,15 @@ public class ImageService {
                 validatedImage.contentType(),
                 validatedImage.originalName(),
                 validatedImage.size(),
-                ImageRoutes.imageUrl(publicId)
+                ImageRoutes.imageUrl(publicId),
+                new ImageLimitView(
+                        newTotalSize,
+                        imageUploadProperties.maxTotalSizePerContent().toBytes()
+                )
         );
     }
 
+    @Transactional(readOnly = true)
     public ImageContent getImage(UUID publicId) {
         ContentItemImage contentItemImage = contentItemImageRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new NotFoundException("Изображение не найдено"));
@@ -105,13 +116,13 @@ public class ImageService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContentImageView> getContentImages(Long contentItemId, Long userId) {
+    public ContentImagesView getContentImages(Long contentItemId, Long userId) {
         ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Контент не найден"));
 
         checkOwner(contentItem, userId);
 
-        return contentItemImageRepository.findByContentItemId(contentItemId)
+        List<ContentImageView> images = contentItemImageRepository.findByContentItemId(contentItemId)
                 .stream()
                 .map(image -> new ContentImageView(
                         image.getPublicId(),
@@ -121,14 +132,27 @@ public class ImageService {
                         ImageRoutes.imageUrl(image.getPublicId())
                 ))
                 .toList();
+
+        long totalContentSize = contentItemImageRepository.sumSizeByContentItemId(contentItemId);
+
+        return new ContentImagesView(
+                images,
+                new ImageLimitView(
+                        totalContentSize,
+                        imageUploadProperties.maxTotalSizePerContent().toBytes()
+                )
+        );
     }
 
     @Transactional
-    public void deleteContentImage(Long contentItemId, UUID publicId, Long userId) {
-        ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
+    public ImageLimitView deleteContentImage(Long contentItemId, UUID publicId, Long userId) {
+        ContentItem contentItem = contentItemRepository
+                .findByIdForImageUpload(contentItemId)
                 .orElseThrow(() -> new NotFoundException("Контент не найден"));
 
         checkOwner(contentItem, userId);
+
+        long sumContentSize = contentItemImageRepository.sumSizeByContentItemId(contentItemId);
 
         ContentItemImage image = contentItemImageRepository
                 .findByContentItemIdAndPublicId(contentItemId, publicId)
@@ -139,6 +163,11 @@ public class ImageService {
         );
 
         contentItemImageRepository.delete(image);
+
+        return new ImageLimitView(
+                sumContentSize - image.getSize(),
+                imageUploadProperties.maxTotalSizePerContent().toBytes()
+        );
     }
 
     public void checkOwner(ContentItem contentItem, Long userId) {
@@ -146,10 +175,6 @@ public class ImageService {
             log.debug("Access is denied ownerId={}, userId={}", contentItem.getOwner().getId(), userId);
             throw new ForbiddenException("Доступ к контенту запрещен запрещен");
         }
-    }
-
-    public void deleteImage(String storageKey) {
-        imageStorage.delete(storageKey);
     }
 
     private String resolveExtension(String contentType) {
@@ -162,12 +187,33 @@ public class ImageService {
         };
     }
 
+    private long checkImageLimits(Long contentItemId, Long userId, long newImageSize) {
+        long maxContentSize = imageUploadProperties.maxTotalSizePerContent().toBytes();
+        long maxUserSize = imageUploadProperties.maxTotalSizePerUser().toBytes();
+
+        long currentContentSize = contentItemImageRepository.sumSizeByContentItemId(contentItemId);
+        long newContentSize = currentContentSize + newImageSize;
+
+        if (newContentSize > maxContentSize) {
+            throw new BadRequestException("Превышен лимит объёма изображений для этого контента");
+        }
+
+        long currentUserSize = contentItemImageRepository.sumSizeByOwnerId(userId);
+        long newUserSize = currentUserSize + newImageSize;
+
+        if (newUserSize > maxUserSize) {
+            throw new BadRequestException("Превышен общий лимит объёма изображений для пользователя");
+        }
+
+        return newContentSize;
+    }
+
     private ValidatedImage validateUploadImage(MultipartFile file) {
         if (file.isEmpty()) {
             throw new BadRequestException("Изображение пустое");
         }
 
-        if (file.getSize() > SIZE_LIMIT) {
+        if (file.getSize() > imageUploadProperties.maxFileSize().toBytes()) {
             throw new BadRequestException("Размер изображения слишком большой");
         }
 

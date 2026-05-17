@@ -172,7 +172,7 @@
 
         <div class="actions">
             <#if result.showLoginButton()>
-                <a class="button button-primary" href="/login">
+                <a class="button button-primary" href="/auth/login">
                     Перейти ко входу
                 </a>
             <#else>
@@ -180,7 +180,7 @@
                     Зарегистрироваться
                 </a>
 
-                <a class="button button-secondary" href="/login">
+                <a class="button button-secondary" href="/auth/login">
                     Перейти ко входу
                 </a>
             </#if>
@@ -197,7 +197,7 @@
 <#if result.showLoginButton()>
     <script>
         setTimeout(function () {
-            window.location.href = "/login";
+            window.location.href = "/auth/login";
         }, 5000);
     </script>
 </#if>

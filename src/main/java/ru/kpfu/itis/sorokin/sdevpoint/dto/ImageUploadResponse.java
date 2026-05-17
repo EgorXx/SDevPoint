@@ -7,5 +7,6 @@ public record ImageUploadResponse(
         String contentType,
         String originalName,
         long size,
-        String url
+        String url,
+        ImageLimitView imageLimitView
 ) {}
