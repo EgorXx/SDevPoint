@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Подтверждение почты</title>
@@ -11,7 +11,9 @@
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,0.08);">
                 <tr>
                     <td style="padding:32px 40px; background-color:#111827;">
-                        <h1 style="margin:0; font-size:24px; line-height:1.3; color:#ffffff;" th:text="${appName}">My App</h1>
+                        <h1 style="margin:0; font-size:24px; line-height:1.3; color:#ffffff;">
+                            ${appName}
+                        </h1>
                     </td>
                 </tr>
 
@@ -23,7 +25,7 @@
 
                         <p style="margin:0 0 16px; font-size:16px; line-height:1.6; color:#374151;">
                             Здравствуйте,
-                            <span th:text="${username}">пользователь</span>.
+                            <span>${username}</span>.
                         </p>
 
                         <p style="margin:0 0 24px; font-size:16px; line-height:1.6; color:#374151;">
@@ -33,8 +35,7 @@
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
                             <tr>
                                 <td align="center" bgcolor="#2563eb" style="border-radius:8px;">
-                                    <a th:href="${confirmationLink}"
-                                       href="#"
+                                    <a href="${confirmationLink}"
                                        style="display:inline-block; padding:14px 28px; font-size:16px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px;">
                                         Подтвердить почту
                                     </a>
@@ -47,17 +48,15 @@
                         </p>
 
                         <p style="margin:0 0 24px; font-size:14px; line-height:1.6; word-break:break-all;">
-                            <a th:href="${confirmationLink}"
-                               th:text="${confirmationLink}"
-                               href="#"
+                            <a href="${confirmationLink}"
                                style="color:#2563eb; text-decoration:none;">
-                                confirmation link
+                                ${confirmationLink}
                             </a>
                         </p>
 
                         <p style="margin:0; font-size:14px; line-height:1.6; color:#6b7280;">
                             Ссылка действует до
-                            <span th:text="${expiresAt}">2026-04-16 18:00 UTC</span>.
+                            <span>${expiresAt}</span>.
                         </p>
                     </td>
                 </tr>

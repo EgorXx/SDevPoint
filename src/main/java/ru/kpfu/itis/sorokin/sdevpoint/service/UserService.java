@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,13 +16,12 @@ import ru.kpfu.itis.sorokin.sdevpoint.dto.UserForm;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.EmailVerification;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.Role;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
+import ru.kpfu.itis.sorokin.sdevpoint.event.SendEmailVerificationEvent;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.EntityAlreadyExistsException;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.EmailAlreadyExistsException;
 import ru.kpfu.itis.sorokin.sdevpoint.factory.UserFactory;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.UserRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.web.form.ProfileNameSettingsForm;
-
-import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -34,10 +34,11 @@ public class UserService {
     private final UserFactory userFactory;
     private final EmailVerificationService emailVerificationService;
     private final AvatarService avatarService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Long registerUser(@Valid UserForm userForm) {
-        verifiedEmail(userForm.email());
+        checkExistsEmail(userForm.email());
 
         String encodedPassword = passwordEncoder.encode(userForm.password());
 
@@ -56,21 +57,21 @@ public class UserService {
             Throwable cause = e.getCause();
 
             if (cause instanceof ConstraintViolationException) {
-                //TODO: Добавить сюда конкретику, какого именно
-                log.warn("Violation of the constant");
-                throw new EntityAlreadyExistsException("User with email already exists: " + userForm.email());
+                throw new EmailAlreadyExistsException("User with email already exists: " + userForm.email());
             } else {
-                log.error("UserRepository exception: {}, {}", e, cause.getMessage());
+                log.error("UserRepository exception", e);
                 throw e;
             }
         }
 
         log.info("User saved: {}", savedUser);
 
-        EmailVerification emailVerification = emailVerificationService.saveVerificationForUser(user);
+        EmailVerification emailVerification = emailVerificationService.saveVerificationForUser(savedUser);
         log.info("EmailVerification saved: {}", emailVerification);
 
-        emailVerificationService.sendEmailVerification(emailVerification);
+        eventPublisher.publishEvent(new SendEmailVerificationEvent(
+                emailVerification.getId()
+        ));
 
         return savedUser.getId();
     }
@@ -93,10 +94,10 @@ public class UserService {
                 .orElseThrow(CurrentUserNotFoundException::new);
     }
 
-    private void verifiedEmail(String email) {
+    private void checkExistsEmail(String email) {
         if (userRepository.existsByEmail(email)) {
             log.warn("User with email: {} already exists", email);
-            throw new EntityAlreadyExistsException("User with email already exists: " + email);
+            throw new EmailAlreadyExistsException("User with email already exists: " + email);
         }
     }
 

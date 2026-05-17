@@ -52,6 +52,19 @@ app:
     extension: ".png"
   image-storage:
     path: "storage/images"
+  email-verification:
+    token-lifetime: 15m
+    resend-cooldown: 1m
+    rate-limit-window: 1h
+    rate-limit-count: 3
+  async:
+    email:
+      core-pool-size: 2
+      max-pool-size: 5
+      queue-capacity: 100
+      thread-name-prefix: email-async-
+      wait-for-tasks-to-complete-on-shutdown: true
+      await-termination-seconds: 30
 
 mail:
   sender: SDevPoint

@@ -6,10 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationResendStatus;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationStatus;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.UserForm;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.EmailAlreadyExistsException;
 import ru.kpfu.itis.sorokin.sdevpoint.service.EmailVerificationService;
 import ru.kpfu.itis.sorokin.sdevpoint.service.UserService;
 
@@ -17,56 +19,88 @@ import java.net.URI;
 import java.util.UUID;
 
 @Slf4j
-@RestController
+@Controller
 @RequiredArgsConstructor
 public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final UserService userService;
 
     @GetMapping("/auth/confirm")
-    public ResponseEntity<String> confirmEmail(@RequestParam UUID token) {
+    public String confirmEmail(
+            @RequestParam UUID token,
+            Model model
+    ) {
         log.info("Received an email confirmation request: {}", token);
 
-        EmailVerificationStatus emailVerificationStatus = emailVerificationService.verificationEmail(token);
+        EmailConfirmView emailConfirmView = emailVerificationService
+                .verificationEmail(token);
 
-        return switch (emailVerificationStatus) {
-            case ALREADY_VERIFIED -> ResponseEntity.ok("Ваш аккаунт уже подтвержден");
-            case VERIFIED -> ResponseEntity.ok("Ваш аккаунт успешно подтвержден");
-            case INVALID_TOKEN -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("Что-то пошло не так, некорректная ссылка подтверждения");
-            case EXPIRED_NEW_TOKEN_SENT -> ResponseEntity.status(HttpStatus.OK).body("Письмо устарело, отправлено новое письмо для подтверждения");
-            case null -> ResponseEntity.ok("Что-то пошло не так");
-        };
+        model.addAttribute("result", emailConfirmView);
+
+        return "auth/confirm-result";
     }
 
+    @ResponseBody
     @PostMapping("/auth/resend")
     public ResponseEntity<String> resendEmailVerification(HttpSession httpSession) {
         Long userId = (Long) httpSession.getAttribute("registerProcessUserId");
 
         if (userId == null) {
-            return ResponseEntity.status(HttpStatus.SEE_OTHER)
-                    .location(URI.create("/login"))
-                    .build();
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Сессия регистрации истекла. Зарегистрируйтесь заново.");
         }
 
         log.info("Received an resend email verification request, userId: {}", userId);
 
-        EmailVerificationResendStatus resendStatus = emailVerificationService.resendEmailVerification(userId);
+        EmailVerificationResendResponse resendResponse = emailVerificationService
+                .resendEmailVerification(userId);
 
-        return switch (resendStatus) {
-            case TOO_MANY_REQUEST -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Вы отправляете слишком много запросов на отправку подтверждения, ожидайте");
-            case RATE_LIMIT_REQUEST -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Вы превысили лимит отправки сообщений на почту, лимит обновится примерно через час");
-            case RESEND -> ResponseEntity.ok("Письмо отправлено вам на почту");
-            case ALREADY_VERIFIED -> ResponseEntity.ok("Ваш аккаунт успешно подтвержден");
+        return switch (resendResponse.resendStatus()) {
+            case TOO_MANY_REQUEST, RATE_LIMIT_REQUEST -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(resendResponse.message());
+            case RESEND, ALREADY_VERIFIED -> ResponseEntity.ok(resendResponse.message());
             case null -> ResponseEntity.ok("Что-то пошло не так");
         };
     }
 
-    @PostMapping("/registration")
-    public ResponseEntity<String> registration(@Valid @RequestBody UserForm userForm, HttpSession httpSession) {
-        Long userId = userService.registerUser(userForm);
-        httpSession.setAttribute("registerProcessUserId", userId);
+    @PostMapping("auth/register")
+    public String register(
+            @Valid @ModelAttribute("form") UserForm userForm,
+            BindingResult bindingResult,
+            HttpSession httpSession
+    ) {
+        if (bindingResult.hasErrors()) {
+            return "auth/register";
+        }
 
-        //TODO тут будет редирект на auth/pending
-        return ResponseEntity.ok("Пользователь успешно зарегистрирован");
+        try {
+            Long userId = userService.registerUser(userForm);
+            httpSession.setAttribute("registerProcessUserId", userId);
+            return "redirect:/auth/pending";
+        } catch (EmailAlreadyExistsException _) {
+            bindingResult.rejectValue(
+                    "email",
+                    "email.alreadyExists",
+                    "Пользователь с такой почтой уже зарегистрирован"
+            );
+            return "auth/register";
+        }
+    }
+
+    @GetMapping("/auth/register")
+    public String registerPage(Model model) {
+        model.addAttribute("form", new UserForm("", ""));
+        return "auth/register";
+    }
+
+    @GetMapping("/auth/pending")
+    public String pendingEmailPage(HttpSession httpSession) {
+        Long userId = (Long) httpSession.getAttribute("registerProcessUserId");
+
+        if (userId == null) {
+            return "redirect:/register";
+        }
+
+        return "auth/pending";
     }
 }

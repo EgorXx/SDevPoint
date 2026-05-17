@@ -16,6 +16,7 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.parser.Tag;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
+import ru.kpfu.itis.sorokin.sdevpoint.web.routes.ImageRoutes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,8 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class MarkdownRenderService {
-
-    private static final String IMAGE_SRC_PREFIX = "/api/image/";
     private static final Pattern MARK_PATTERN = Pattern.compile("==([^=\\n]+)==");
+    private static final String IMAGE_SRC_PREFIX = ImageRoutes.IMAGE_PREFIX;
 
     private final MutableDataSet options = new MutableDataSet()
             .set(Parser.EXTENSIONS, List.of(

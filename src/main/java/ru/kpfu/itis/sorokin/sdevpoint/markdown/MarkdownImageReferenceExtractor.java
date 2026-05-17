@@ -1,6 +1,7 @@
 package ru.kpfu.itis.sorokin.sdevpoint.markdown;
 
 import org.springframework.stereotype.Component;
+import ru.kpfu.itis.sorokin.sdevpoint.web.routes.ImageRoutes;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -11,8 +12,9 @@ import java.util.regex.Pattern;
 
 @Component
 public class MarkdownImageReferenceExtractor {
+
     private static final Pattern IMAGE_URL_PATTERN =
-            Pattern.compile("/api/image/([0-9a-fA-F\\-]{36})");
+            Pattern.compile(ImageRoutes.IMAGE_PREFIX + "([0-9a-fA-F\\-]{36})");
 
     public Set<UUID> extractPublicIds(Collection<String> markdownTexts) {
         Set<UUID> result = new HashSet<>();

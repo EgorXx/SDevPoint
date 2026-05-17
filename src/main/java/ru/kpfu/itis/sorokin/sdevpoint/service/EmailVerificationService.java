@@ -2,13 +2,17 @@ package ru.kpfu.itis.sorokin.sdevpoint.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailConfirmView;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationResendResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationResendStatus;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.EmailVerificationStatus;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.EmailVerification;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.UserNotFound;
+import ru.kpfu.itis.sorokin.sdevpoint.event.SendEmailVerificationEvent;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
+import ru.kpfu.itis.sorokin.sdevpoint.properties.EmailVerificationProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.redis.CooldownStore;
 import ru.kpfu.itis.sorokin.sdevpoint.redis.WindowRateLimitStore;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.EmailVerificationRepository;
@@ -24,23 +28,20 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
-    private final EmailService emailService;
     private final EmailVerificationRepository emailVerificationRepository;
     private final UserRepository userRepository;
     private final CooldownStore cooldownStore;
     private final WindowRateLimitStore rateLimitStore;
-
-    private static final Duration TOKEN_LIFETIME = Duration.ofMinutes(15);
-    private static final Duration COOLDOWN_TIME = Duration.ofMinutes(1);
-    private static final Duration RATE_LIMIT_TIME = Duration.ofHours(1);
-    private static final int RATE_LIMIT_COUNT = 3;
+    private final DateTimeFormatService dateTimeFormatService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final EmailVerificationProperties properties;
 
     @Transactional
     public EmailVerification saveVerificationForUser(User user) {
         EmailVerification emailVerification = new EmailVerification();
 
         UUID token = UUID.randomUUID();
-        Instant expiresAt = Instant.now().plus(TOKEN_LIFETIME);
+        Instant expiresAt = Instant.now().plus(properties.tokenLifetime());
 
         emailVerification.setUser(user);
         emailVerification.setToken(token);
@@ -51,34 +52,47 @@ public class EmailVerificationService {
         return emailVerification;
     }
 
-    public void sendEmailVerification(EmailVerification emailVerification) {
-        emailService.sendVerificationMail(emailVerification);
-    }
-
     @Transactional
-    public EmailVerificationStatus verificationEmail(UUID token) {
+    public EmailConfirmView verificationEmail(UUID token) {
         EmailVerification emailVerification = emailVerificationRepository.findByToken(token)
                 .orElse(null);
 
         if (emailVerification == null) {
-            return EmailVerificationStatus.INVALID_TOKEN;
+            return new EmailConfirmView(
+                    "Некорректная ссылка",
+                    "Ссылка подтверждения недействительна. Попробуйте зарегистрироваться заново или запросить новое письмо.",
+                    "error",
+                    false
+            );
         }
 
         if (Boolean.TRUE.equals(emailVerification.getUser().getEmailVerified())) {
-            return EmailVerificationStatus.ALREADY_VERIFIED;
+            return new EmailConfirmView(
+                    "Аккаунт уже подтверждён",
+                    "Ваш аккаунт уже был подтверждён ранее. Теперь можно перейти ко входу.",
+                    "success",
+                    true
+            );
         }
 
         if (emailVerificationIsExpired(emailVerification)) {
             log.info("token's lifetime has expired");
 
             emailVerification.refresh(
-                    Instant.now().plus(Duration.ofSeconds(15)),
+                    Instant.now().plus(properties.tokenLifetime()),
                     UUID.randomUUID()
             );
 
-            emailService.sendVerificationMail(emailVerification);
+            eventPublisher.publishEvent(new SendEmailVerificationEvent(
+                    emailVerification.getId()
+            ));
 
-            return EmailVerificationStatus.EXPIRED_NEW_TOKEN_SENT;
+            return new EmailConfirmView(
+                    "Ссылка устарела",
+                    "Срок действия ссылки истёк. Мы отправили новое письмо для подтверждения.",
+                    "warning",
+                    false
+            );
         }
 
         log.info("Email Confirmation for token: {}", token);
@@ -86,11 +100,16 @@ public class EmailVerificationService {
         Long userId = emailVerification.getUser().getId();
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFound("User not found, id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found, id: " + userId));
 
         user.setEmailVerified(true);
 
-        return EmailVerificationStatus.VERIFIED;
+        return new EmailConfirmView(
+                "Почта подтверждена",
+                "Ваш аккаунт успешно подтверждён. Теперь можно войти в систему.",
+                "success",
+                true
+        );
     }
 
     private boolean emailVerificationIsExpired(EmailVerification emailVerification) {
@@ -98,37 +117,62 @@ public class EmailVerificationService {
     }
 
     @Transactional
-    public EmailVerificationResendStatus resendEmailVerification(Long userId) {
+    public EmailVerificationResendResponse resendEmailVerification(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFound("User not found, id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found, id: " + userId));
 
         if (Boolean.TRUE.equals(user.getEmailVerified())) {
-            return EmailVerificationResendStatus.ALREADY_VERIFIED;
+            return new EmailVerificationResendResponse(
+                    EmailVerificationResendStatus.ALREADY_VERIFIED,
+                    "Ваш аккаунт успешно подтвержден"
+            );
         }
 
+        // Проверка cooldown
         String subject = "user:" + userId;
 
-        String window = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).toString();
+        if (!cooldownStore.tryAcquire(subject, properties.resendCooldown())) {
+            long ttl = cooldownStore.getRemainingSeconds(subject);
+            String waitTime = dateTimeFormatService.formatRemainingTime(ttl);
 
-        long count = rateLimitStore.incrementRate(subject, window, RATE_LIMIT_TIME);
-
-        if (count > RATE_LIMIT_COUNT) {
-            return EmailVerificationResendStatus.RATE_LIMIT_REQUEST;
+            return new EmailVerificationResendResponse(
+                    EmailVerificationResendStatus.TOO_MANY_REQUEST,
+                    "Вы отправляете слишком много запросов на отправку подтверждения. Лимит обновится через " + waitTime
+            );
         }
 
-        if (!cooldownStore.tryAcquire(subject, COOLDOWN_TIME)) {
-            return EmailVerificationResendStatus.TOO_MANY_REQUEST;
+        // Проверка лимита за окно
+        String window = LocalDateTime.now()
+                .truncatedTo(ChronoUnit.HOURS)
+                .toString();
+
+        long count = rateLimitStore.incrementRate(subject, window, properties.rateLimitWindow());
+
+        if (count > properties.rateLimitCount()) {
+            long ttl = rateLimitStore.getRemainingSeconds(subject, window);
+            String waitTime = dateTimeFormatService.formatRemainingTime(ttl);
+
+            return new EmailVerificationResendResponse(
+                    EmailVerificationResendStatus.RATE_LIMIT_REQUEST,
+                    "Вы отправили слишком много запросов на отправку подтверждения. Лимит обновится через " + waitTime
+            );
         }
+
 
         EmailVerification emailVerification = user.getEmailVerification();
 
         emailVerification.refresh(
-                Instant.now().plus(Duration.ofSeconds(15)),
+                Instant.now().plus(properties.tokenLifetime()),
                 UUID.randomUUID()
         );
 
-        emailService.sendVerificationMail(emailVerification);
+        eventPublisher.publishEvent(new SendEmailVerificationEvent(
+                emailVerification.getId()
+        ));
 
-        return EmailVerificationResendStatus.RESEND;
+        return new EmailVerificationResendResponse(
+                EmailVerificationResendStatus.RESEND,
+                "Письмо отправлено вам на почту"
+        );
     }
 }

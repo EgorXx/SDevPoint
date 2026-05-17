@@ -16,6 +16,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemImageRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
+import ru.kpfu.itis.sorokin.sdevpoint.web.routes.ImageRoutes;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -35,7 +36,6 @@ public class ImageService {
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
 
     private static final long SIZE_LIMIT = 5L * 1024 * 1024;
-    private static final String ENDPOINT = "/api/image/";
 
     public ImageUploadResponse upload(MultipartFile image, Long contentItemId, Long userId) {
         ContentItem contentItem = contentItemRepository.findWithOwnerById(contentItemId)
@@ -80,7 +80,7 @@ public class ImageService {
                 validatedImage.contentType(),
                 validatedImage.originalName(),
                 validatedImage.size(),
-                ENDPOINT + publicId
+                ImageRoutes.imageUrl(publicId)
         );
     }
 
@@ -118,7 +118,7 @@ public class ImageService {
                         image.getOriginalName(),
                         image.getSize(),
                         image.getContentType(),
-                        ENDPOINT + image.getPublicId()
+                        ImageRoutes.imageUrl(image.getPublicId())
                 ))
                 .toList();
     }

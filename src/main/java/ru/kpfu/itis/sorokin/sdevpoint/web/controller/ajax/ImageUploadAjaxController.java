@@ -23,7 +23,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class ImageUploadController {
+public class ImageUploadAjaxController {
     private final ImageService imageService;
     private static final Duration MAX_AGE_DURATION = Duration.ofDays(30);
 
