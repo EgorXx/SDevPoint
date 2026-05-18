@@ -1,5 +1,11 @@
 <#-- templates/auth/pending.ftlh -->
-
+<#if _csrf??>
+    <#assign csrfHeaderName = _csrf.headerName>
+    <#assign csrfToken = _csrf.token>
+<#else>
+    <#assign csrfHeaderName = "">
+    <#assign csrfToken = "">
+</#if>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -188,7 +194,7 @@
                 Отправить письмо ещё раз
             </button>
 
-            <a class="button button-secondary" href="/login">
+            <a class="button button-secondary" href="/auth/login">
                 Перейти ко входу
             </a>
         </div>
@@ -204,8 +210,8 @@
     const resendButton = document.getElementById("resendButton");
     const notice = document.getElementById("notice");
 
-    const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
-    const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+    const csrfHeaderName = <#if csrfHeaderName?has_content>"${csrfHeaderName?js_string}"<#else>null</#if>;
+    const csrfToken = <#if csrfToken?has_content>"${csrfToken?js_string}"<#else>null</#if>;
 
     function showNotice(message, type) {
         notice.textContent = message;

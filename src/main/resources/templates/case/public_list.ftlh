@@ -192,6 +192,17 @@
             font-size: 14px;
         }
 
+        .page-error {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            background: #fef2f2;
+            color: #991b1b;
+            font-size: 15px;
+        }
+
         @media (max-width: 700px) {
             .page-wrapper {
                 padding: 24px 14px 40px;
@@ -223,12 +234,28 @@
 
 <script>
     <#if _csrf??>
-    const csrfHeaderName = "${_csrf.headerName}";
-    const csrfToken = "${_csrf.token}";
+    const csrfHeaderName = "${_csrf.headerName?js_string}";
+    const csrfToken = "${_csrf.token?js_string}";
     <#else>
     const csrfHeaderName = null;
     const csrfToken = null;
     </#if>
+
+    function showPageError(message) {
+        const errorBlock = document.getElementById("pageError");
+
+        if (!errorBlock) {
+            return;
+        }
+
+        errorBlock.textContent = message;
+        errorBlock.style.display = "block";
+
+        setTimeout(function () {
+            errorBlock.style.display = "none";
+            errorBlock.textContent = "";
+        }, 7000);
+    }
 
     document.addEventListener("click", async function (event) {
         const button = event.target.closest(".favorite-button");
@@ -255,23 +282,26 @@
         }
 
         try {
-            const response = await fetch("/favorites/content/" + contentId, {
+            const response = await fetch("/api/favorites/content/" + contentId, {
                 method: "POST",
                 headers: headers
             });
 
-            if (response.status === 401 || response.status === 403) {
-                window.location.href = "/login";
+            if (response.status === 401) {
+                showPageError("Необходимо авторизоваться, чтобы добавить контент в избранное.");
+                button.disabled = false;
                 return;
             }
 
-            if (response.redirected && response.url.includes("/login")) {
-                window.location.href = "/login";
+            if (response.status === 403) {
+                showPageError("Недостаточно прав для изменения избранного.");
+                button.disabled = false;
                 return;
             }
 
             if (!response.ok) {
-                alert("Не удалось изменить избранное");
+                showPageError("Не удалось изменить избранное.");
+                button.disabled = false;
                 return;
             }
 
@@ -289,7 +319,7 @@
             button.disabled = false;
         } catch (e) {
             console.error(e);
-            alert("Не удалось изменить избранное");
+            showPageError("Не удалось изменить избранное.");
             button.disabled = false;
         }
     });
@@ -304,6 +334,8 @@
             Список опубликованных практических кейсов пользователей.
         </p>
     </header>
+
+    <div id="pageError" class="page-error"></div>
 
     <#if page.cases()?has_content>
         <section class="cases">

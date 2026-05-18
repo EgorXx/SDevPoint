@@ -178,7 +178,9 @@
 
         <form method="post" action="/auth/register">
             <#if _csrf??>
-                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                <input type="hidden"
+                       name="${_csrf.parameterName}"
+                       value="${_csrf.token}">
             </#if>
 
             <div class="form-group">
@@ -234,7 +236,7 @@
         </form>
 
         <div class="login-link">
-            Уже есть аккаунт? <a href="/login">Войти</a>
+            Уже есть аккаунт? <a href="/auth/login">Войти</a>
         </div>
     </section>
 </main>

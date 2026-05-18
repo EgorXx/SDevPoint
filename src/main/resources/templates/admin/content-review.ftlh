@@ -471,8 +471,8 @@
 </main>
 
 <script>
-    const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
-    const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+    const csrfHeaderName = <#if _csrf??>"${_csrf.headerName?js_string}"<#else>null</#if>;
+    const csrfToken = <#if _csrf??>"${_csrf.token?js_string}"<#else>null</#if>;
 
     function buildHeaders(jsonBody) {
         const headers = {};

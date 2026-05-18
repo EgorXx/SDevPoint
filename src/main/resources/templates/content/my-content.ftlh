@@ -1,5 +1,11 @@
 <#-- templates/content/my-content.ftlh -->
-
+<#if _csrf??>
+    <#assign csrfHeaderName = _csrf.headerName>
+    <#assign csrfToken = _csrf.token>
+<#else>
+    <#assign csrfHeaderName = "">
+    <#assign csrfToken = "">
+</#if>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -569,8 +575,8 @@
 </main>
 
 <script>
-    const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
-    const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+    const csrfHeaderName = <#if csrfHeaderName?has_content>"${csrfHeaderName?js_string}"<#else>null</#if>;
+    const csrfToken = <#if csrfToken?has_content>"${csrfToken?js_string}"<#else>null</#if>;
 
     function buildHeaders(jsonBody) {
         const headers = {};

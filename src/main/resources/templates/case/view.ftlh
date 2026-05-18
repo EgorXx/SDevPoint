@@ -448,6 +448,29 @@
             font-style: italic;
         }
 
+        .page-message {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .page-message-error {
+            display: block;
+            color: var(--danger);
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+        }
+
+        .page-message-warning {
+            display: block;
+            color: var(--ai-warning);
+            background: var(--ai-warning-bg);
+            border: 1px solid var(--ai-warning-border);
+        }
+
         @media (max-width: 700px) {
             .page {
                 padding: 20px 12px 40px;
@@ -483,6 +506,8 @@
 <body>
 
 <main class="page">
+    <div id="pageMessage" class="page-message"></div>
+
     <article class="case-card">
         <header class="case-header">
             <h1 class="case-title">${currentCase.title()}</h1>
@@ -656,6 +681,22 @@
         });
     }
 
+    function showPageMessage(message, type) {
+        const pageMessage = document.getElementById("pageMessage");
+
+        if (!pageMessage) {
+            return;
+        }
+
+        pageMessage.textContent = message || "Произошла ошибка";
+        pageMessage.className = "page-message page-message-" + type;
+
+        setTimeout(function () {
+            pageMessage.textContent = "";
+            pageMessage.className = "page-message";
+        }, 7000);
+    }
+
     function initReactions() {
         const contentItemId = "${currentCase.contentId()}";
 
@@ -701,13 +742,20 @@
                     credentials: "same-origin"
                 });
 
-                if (response.status === 401 || response.status === 403) {
-                    window.location.href = "/auth/login";
+                if (response.status === 401) {
+                    showPageMessage("Для реакции необходимо войти в аккаунт.", "warning");
+                    setButtonsDisabled(false);
+                    return;
+                }
+
+                if (response.status === 403) {
+                    showPageMessage("Недостаточно прав для выполнения действия.", "error");
+                    setButtonsDisabled(false);
                     return;
                 }
 
                 if (!response.ok) {
-                    alert("Не удалось обновить реакцию");
+                    showPageMessage("Не удалось обновить реакцию.", "error");
                     setButtonsDisabled(false);
                     return;
                 }
@@ -718,7 +766,7 @@
                 setButtonsDisabled(false);
             } catch (e) {
                 console.error(e);
-                alert("Не удалось обновить реакцию");
+                showPageMessage("Не удалось обновить реакцию.", "error");
                 setButtonsDisabled(false);
             }
         }

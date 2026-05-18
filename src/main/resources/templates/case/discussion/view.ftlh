@@ -1,5 +1,11 @@
 <#-- templates/case/discussion.ftlh -->
-
+<#if _csrf??>
+    <#assign csrfHeaderName = _csrf.headerName>
+    <#assign csrfToken = _csrf.token>
+<#else>
+    <#assign csrfHeaderName = "">
+    <#assign csrfToken = "">
+</#if>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -320,6 +326,22 @@
             font-size: 14px;
         }
 
+        .page-message {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border: 1px solid var(--danger-border);
+            border-radius: 12px;
+            background: var(--danger-bg);
+            color: var(--danger);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .page-message-error {
+            display: block;
+        }
+
         @media (max-width: 700px) {
             .page-wrapper {
                 padding: 24px 14px 40px;
@@ -379,6 +401,7 @@
 <body>
 
 <main class="page-wrapper">
+    <div id="pageMessage" class="page-message"></div>
 
     <section class="case-card">
         <div class="case-header">
@@ -418,8 +441,10 @@
             </#if>
 
             <form method="post" action="/cases/${discussionPage.contentItemId()}/comments">
-                <#if _csrf??>
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                <#if csrfToken?has_content>
+                    <input type="hidden"
+                           name="_csrf"
+                           value="${csrfToken}">
                 </#if>
 
                 <textarea
@@ -522,13 +547,24 @@
 <script>
     const caseId = "${discussionPage.contentItemId()}";
 
-    <#if _csrf??>
-    const csrfHeaderName = "${_csrf.headerName}";
-    const csrfToken = "${_csrf.token}";
-    <#else>
-    const csrfHeaderName = null;
-    const csrfToken = null;
-    </#if>
+    const csrfHeaderName = <#if csrfHeaderName?has_content>"${csrfHeaderName?js_string}"<#else>null</#if>;
+    const csrfToken = <#if csrfToken?has_content>"${csrfToken?js_string}"<#else>null</#if>;
+
+    function showPageMessage(message) {
+        const pageMessage = document.getElementById("pageMessage");
+
+        if (!pageMessage) {
+            return;
+        }
+
+        pageMessage.textContent = message || "Произошла ошибка";
+        pageMessage.className = "page-message page-message-error";
+
+        setTimeout(function () {
+            pageMessage.textContent = "";
+            pageMessage.className = "page-message";
+        }, 7000);
+    }
 
     document.addEventListener("click", async function (event) {
         const button = event.target.closest(".delete-comment-button");
@@ -556,13 +592,13 @@
         }
 
         try {
-            const response = await fetch("/cases/" + caseId + "/comments/" + commentId, {
+            const response = await fetch("/api/cases/" + caseId + "/comments/" + commentId, {
                 method: "DELETE",
                 headers: headers
             });
 
             if (!response.ok) {
-                alert("Не удалось удалить комментарий");
+                showPageMessage("Не удалось удалить комментарий.");
                 return;
             }
 
@@ -573,7 +609,7 @@
             }
         } catch (e) {
             console.error(e);
-            alert("Не удалось удалить комментарий");
+            showPageMessage("Не удалось удалить комментарий.");
         }
     });
 </script>

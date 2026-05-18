@@ -15,7 +15,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.service.CustomUserDetails;
 public class CaseCommentAjaxController {
     private final CaseCommentService caseCommentService;
 
-    @DeleteMapping("/cases/{contentId}/comments/{commentId}")
+    @DeleteMapping("api/cases/{contentId}/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable("contentId") Long contentId,
             @PathVariable("commentId") Long commentId,

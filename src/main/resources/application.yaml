@@ -1,17 +1,21 @@
 spring:
   config:
     import: optional:file:.env[.properties]
+
   application:
     name: sdevpoint
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/sdevpoint
     password: qwerty007
     username: postgres
+
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -23,6 +27,7 @@ spring:
           auth: true
           starttls:
             enable: true
+
   liquibase:
     change-log: classpath:/migrations/changelog/changelog-root.yml
     enabled: true
@@ -39,31 +44,38 @@ app:
   scheduler:
     cleanup-drafts-cron: "0 */2 * * * * "
     cleanup-images-cron: "0 */2 * * * * "
+
   content-view:
     date-format: "dd.MM.yyyy HH:mm"
     timezone: "Europe/Moscow"
     preview-size: 100
+
   avatar:
     count: 5
     url-prefix: "/avatars/"
     file-prefix: "avatar-"
     extension: ".png"
+
   image-storage:
     path: "storage/images"
+
   content:
     limits:
       max-content-items-per-user: 100
       comment-cooldown: 1m
+
   image:
     upload:
       max-file-size: 7MB
       max-total-size-per-content: 10MB
       max-total-size-per-user: 1GB
+
   email-verification:
     token-lifetime: 15m
     resend-cooldown: 1m
     rate-limit-window: 1h
     rate-limit-count: 3
+
   async:
     email:
       core-pool-size: 2
@@ -72,6 +84,7 @@ app:
       thread-name-prefix: email-async-
       wait-for-tasks-to-complete-on-shutdown: true
       await-termination-seconds: 30
+
   ai:
     provider: openrouter
     content:
