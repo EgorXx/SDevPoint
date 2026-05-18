@@ -40,6 +40,14 @@ spring:
   cache:
     type: redis
 
+  web:
+    error:
+      include-exception: false
+      include-stacktrace: never
+      include-message: never
+      whitelabel:
+        enabled: false
+
 app:
   scheduler:
     cleanup-drafts-cron: "0 */2 * * * * "
@@ -124,8 +132,6 @@ app:
     ai-summary:
       cache-name: "aiSummary"
       ttl: 1h
-
-
 
 mail:
   sender: SDevPoint
