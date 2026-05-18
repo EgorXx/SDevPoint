@@ -34,17 +34,58 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/registration").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/favorites").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/favorites/content/*").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/profile").authenticated()
-                        .requestMatchers("/my-content").authenticated()
+                        .requestMatchers(
+                                "/error",
+                                "/css/**",
+                                "/js/**",
+                                "/avatars/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/auth/login",
+                                "/auth/register",
+                                "/auth/confirm",
+                                "/auth/pending",
+                                "/auth/resend"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/articles/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cases/public").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/articles/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cases/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cases/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/cases/*/comments").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/users/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/image/*").permitAll()
+
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/content/*/ai/*").authenticated()
-                        .requestMatchers("/api/favorites/**").authenticated()
-                                .requestMatchers("/api/content-items/**").authenticated()
-                        .anyRequest().permitAll())
+
+                        .requestMatchers("/profile/**").authenticated()
+                        .requestMatchers("/my-content").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/favorites").authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/articles/drafts").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/articles/drafts/*/edit").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/articles/drafts/*").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/articles/drafts/*/publish").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/articles/*/edit").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/articles/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/articles/*").authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/cases/drafts").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/cases/drafts/*/edit").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/cases/drafts/*").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/cases/drafts/*/publish").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/cases/*/edit").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/cases/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/cases/*").authenticated()
+
+                        .requestMatchers("/api/**").authenticated()
+
+                        .anyRequest().denyAll()
+                )
                 .formLogin(form -> form
                         .loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login")

@@ -44,10 +44,17 @@ public class ImageUploadAjaxController {
     }
 
     @GetMapping(path = "/api/image/{publicId}")
-    public ResponseEntity<Resource> getImage(@PathVariable UUID publicId) {
+    public ResponseEntity<Resource> getImage(
+            @PathVariable UUID publicId,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
         log.info("Received request get image");
 
-        ImageContent imageContent = imageService.getImage(publicId);
+        Long currentUserId = customUserDetails != null
+                ? customUserDetails.getUserId()
+                : null;
+
+        ImageContent imageContent = imageService.getImage(publicId, currentUserId);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(imageContent.contentType()))

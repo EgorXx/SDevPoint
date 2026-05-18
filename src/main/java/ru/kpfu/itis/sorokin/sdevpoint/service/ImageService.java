@@ -9,6 +9,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItemImage;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTask;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.Visibility;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.ImageStorageException;
@@ -95,9 +96,15 @@ public class ImageService {
     }
 
     @Transactional(readOnly = true)
-    public ImageContent getImage(UUID publicId) {
+    public ImageContent getImage(UUID publicId, Long userId) {
         ContentItemImage contentItemImage = contentItemImageRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new NotFoundException("Изображение не найдено"));
+
+        ContentItem contentItem = contentItemImage.getContentItem();
+
+        if (contentItem.getVisibility() == Visibility.PRIVATE) {
+            checkOwner(contentItem, userId);
+        }
 
         byte[] content;
 
