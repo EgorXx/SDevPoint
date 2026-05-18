@@ -58,41 +58,34 @@ tasks.withType<Test> {
 	useJUnitPlatform()
 }
 
-val openApiSpec = "$projectDir/src/main/resources/api.yml"
-val openApiGeneratedDir = layout.buildDirectory.dir("generated").get().asFile.absolutePath
-
-openApiGenerate {
-	inputSpec.set(openApiSpec)
-	outputDir.set(openApiGeneratedDir)
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("openApiGenerateImage") {
+	inputSpec.set("$projectDir/src/main/resources/api-image.yml")
+	outputDir.set(layout.buildDirectory.dir("generated").get().asFile.absolutePath)
 	generatorName.set("spring")
 
 	modelPackage.set("ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto")
 	apiPackage.set("ru.kpfu.itis.sorokin.sdevpoint.api.generated.api")
 
-	configOptions.set(
-		mapOf(
-			"useJakartaEe" to "true",
-			"useSpringBoot3" to "true",
-			"library" to "spring-boot",
-			"interfaceOnly" to "true",
-			"skipDefaultInterface" to "true",
-			"useBeanValidation" to "true",
-			"useTags" to "true",
-			"dateLibrary" to "java8",
-			"openApiNullable" to "false",
-			"documentationProvider" to "none",
-			"useResponseEntity" to "true"
-		)
-	)
+	configOptions.set(mapOf(
+		"useJakartaEe" to "true",
+		"useSpringBoot3" to "true",
+		"library" to "spring-boot",
+		"interfaceOnly" to "true",
+		"skipDefaultInterface" to "true",
+		"useBeanValidation" to "true",
+		"useTags" to "true",
+		"dateLibrary" to "java8",
+		"openApiNullable" to "false",
+		"documentationProvider" to "none",
+		"useResponseEntity" to "true"
+	))
 
-	globalProperties.set(
-		mapOf(
-			"apiTests" to "false",
-			"modelTests" to "false",
-			"apiDocs" to "false",
-			"modelDocs" to "false"
-		)
-	)
+	globalProperties.set(mapOf(
+		"apiTests" to "false",
+		"modelTests" to "false",
+		"apiDocs" to "false",
+		"modelDocs" to "false"
+	))
 }
 
 sourceSets {
@@ -104,5 +97,5 @@ sourceSets {
 }
 
 tasks.named("compileJava") {
-	dependsOn("openApiGenerate")
+	dependsOn("openApiGenerateImage")
 }

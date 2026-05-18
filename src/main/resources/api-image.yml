@@ -1,0 +1,314 @@
+openapi: 3.0.3
+
+info:
+  title: Image Upload API
+  version: 1.0.0
+  description: API для загрузки, получения и удаления изображений контента
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: Images
+    description: Работа с изображениями
+
+paths:
+  /api/upload/image:
+    post:
+      tags:
+        - Images
+      operationId: uploadImage
+      summary: Загрузка изображения для контента
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - contentItemId
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Файл изображения (png, jpeg, webp, gif)
+                contentItemId:
+                  type: integer
+                  format: int64
+                  description: ID контента, к которому прикрепляется изображение
+      responses:
+        '200':
+          description: Изображение успешно загружено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadResponse'
+        '400':
+          description: Некорректные данные запроса (пустой файл, слишком большой размер, недопустимый тип, превышен лимит объёма)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Нет прав на загрузку изображений для этого контента
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Контент не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Ошибка сохранения изображения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/image/{publicId}:
+    get:
+      tags:
+        - Images
+      operationId: getImage
+      summary: Получение изображения по публичному ID
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          description: Публичный UUID изображения
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Изображение получено
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Изображение принадлежит приватному контенту, доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Изображение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Ошибка загрузки изображения с диска
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/content-items/{contentItemId}/images:
+    get:
+      tags:
+        - Images
+      operationId: getContentImages
+      summary: Получение списка изображений для контента
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: contentItemId
+          in: path
+          required: true
+          description: ID контента
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Список изображений контента
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentImagesView'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Нет прав на просмотр изображений этого контента
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Контент не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/content-items/{contentItemId}/images/{publicId}:
+    delete:
+      tags:
+        - Images
+      operationId: deleteContentImage
+      summary: Удаление изображения контента
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: contentItemId
+          in: path
+          required: true
+          description: ID контента
+          schema:
+            type: integer
+            format: int64
+        - name: publicId
+          in: path
+          required: true
+          description: Публичный UUID изображения
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Изображение удалено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageLimitView'
+        '401':
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Нет прав на удаление изображений этого контента
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Контент или изображение не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+
+  schemas:
+    ImageUploadResponse:
+      type: object
+      required:
+        - publicId
+        - contentType
+        - originalName
+        - size
+        - url
+        - imageLimitView
+      properties:
+        publicId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        contentType:
+          type: string
+          example: "image/png"
+        originalName:
+          type: string
+          example: "screenshot.png"
+        size:
+          type: integer
+          format: int64
+          example: 102400
+        url:
+          type: string
+          format: uri
+          example: "/api/image/550e8400-e29b-41d4-a716-446655440000"
+        imageLimitView:
+          $ref: '#/components/schemas/ImageLimitView'
+
+    ContentImagesView:
+      type: object
+      required:
+        - images
+        - limit
+      properties:
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentImageView'
+        limit:
+          $ref: '#/components/schemas/ImageLimitView'
+
+    ContentImageView:
+      type: object
+      required:
+        - publicId
+        - originalName
+        - size
+        - contentType
+        - url
+      properties:
+        publicId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        originalName:
+          type: string
+          example: "diagram.png"
+        size:
+          type: integer
+          format: int64
+          example: 204800
+        contentType:
+          type: string
+          example: "image/png"
+        url:
+          type: string
+          format: uri
+          example: "/api/image/550e8400-e29b-41d4-a716-446655440000"
+
+    ImageLimitView:
+      type: object
+      required:
+        - currentSize
+        - maxSize
+      properties:
+        currentSize:
+          type: integer
+          format: int64
+          example: 307200
+        maxSize:
+          type: integer
+          format: int64
+          example: 10485760
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Изображение не найдено"

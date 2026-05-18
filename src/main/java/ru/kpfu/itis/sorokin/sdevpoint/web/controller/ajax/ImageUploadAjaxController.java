@@ -7,13 +7,21 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
+import ru.kpfu.itis.sorokin.sdevpoint.api.generated.api.ImagesApi;
+import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ContentImageView;
+import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ContentImagesView;
+import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ImageLimitView;
+import ru.kpfu.itis.sorokin.sdevpoint.api.generated.dto.ImageUploadResponse;
+import ru.kpfu.itis.sorokin.sdevpoint.dto.ImageContent;
+import ru.kpfu.itis.sorokin.sdevpoint.service.CurrentUserProvider;
 import ru.kpfu.itis.sorokin.sdevpoint.service.CustomUserDetails;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ImageService;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -21,38 +29,28 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class ImageUploadAjaxController {
+public class ImageUploadAjaxController implements ImagesApi {
     private final ImageService imageService;
+    private final CurrentUserProvider currentUserProvider;
     private static final Duration MAX_AGE_DURATION = Duration.ofDays(30);
 
-    @PostMapping(path ="/api/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ImageUploadResponse> uploadImage(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("contentItemId") Long contentItemId,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-            ) {
-
+    @Override
+    public ResponseEntity<ImageUploadResponse> uploadImage(MultipartFile file, Long contentItemId) {
         log.info("Received request upload image");
 
-        ImageUploadResponse imageUploadResponse = imageService.upload(
-                file,
-                contentItemId,
-                customUserDetails.getUserId()
-        );
+        Long userId = currentUserProvider.getCurrentUserId();
 
-        return ResponseEntity.ok(imageUploadResponse);
+        ru.kpfu.itis.sorokin.sdevpoint.dto.ImageUploadResponse response =
+                imageService.upload(file, contentItemId, userId);
+
+        return ResponseEntity.ok(toGenerated(response));
     }
 
-    @GetMapping(path = "/api/image/{publicId}")
-    public ResponseEntity<Resource> getImage(
-            @PathVariable UUID publicId,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
+    @Override
+    public ResponseEntity<Resource> getImage(UUID publicId) {
         log.info("Received request get image");
 
-        Long currentUserId = customUserDetails != null
-                ? customUserDetails.getUserId()
-                : null;
+        Long currentUserId = getCurrentUserIdOrNull();
 
         ImageContent imageContent = imageService.getImage(publicId, currentUserId);
 
@@ -63,31 +61,67 @@ public class ImageUploadAjaxController {
                 .body(new ByteArrayResource(imageContent.bytes()));
     }
 
-    @GetMapping("/api/content-items/{contentItemId}/images")
-    public ResponseEntity<ContentImagesView> getContentImages(
-            @PathVariable Long contentItemId,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
-        ContentImagesView imagesView = imageService.getContentImages(
-                contentItemId,
-                customUserDetails.getUserId()
-        );
+    @Override
+    public ResponseEntity<ContentImagesView> getContentImages(Long contentItemId) {
+        Long userId = currentUserProvider.getCurrentUserId();
 
-        return ResponseEntity.ok(imagesView);
+        ru.kpfu.itis.sorokin.sdevpoint.dto.ContentImagesView view =
+                imageService.getContentImages(contentItemId, userId);
+
+        return ResponseEntity.ok(toGenerated(view));
     }
 
-    @DeleteMapping("/api/content-items/{contentItemId}/images/{publicId}")
-    public ResponseEntity<ImageLimitView> deleteContentImage(
-            @PathVariable Long contentItemId,
-            @PathVariable UUID publicId,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
-        ImageLimitView imageLimitView = imageService.deleteContentImage(
-                contentItemId,
-                publicId,
-                customUserDetails.getUserId()
-        );
+    @Override
+    public ResponseEntity<ImageLimitView> deleteContentImage(Long contentItemId, UUID publicId) {
+        Long userId = currentUserProvider.getCurrentUserId();
 
-        return ResponseEntity.ok(imageLimitView);
+        ru.kpfu.itis.sorokin.sdevpoint.dto.ImageLimitView limitView =
+                imageService.deleteContentImage(contentItemId, publicId, userId);
+
+        return ResponseEntity.ok(toGenerated(limitView));
+    }
+
+    private Long getCurrentUserIdOrNull() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            return userDetails.getUserId();
+        }
+        return null;
+    }
+
+    private ImageUploadResponse toGenerated(
+            ru.kpfu.itis.sorokin.sdevpoint.dto.ImageUploadResponse dto) {
+        return new ImageUploadResponse(
+                dto.publicId(),
+                dto.contentType(),
+                dto.originalName(),
+                dto.size(),
+                URI.create(dto.url()),
+                toGenerated(dto.imageLimitView())
+        );
+    }
+
+    private ImageLimitView toGenerated(ru.kpfu.itis.sorokin.sdevpoint.dto.ImageLimitView dto) {
+        return new ImageLimitView(dto.currentSize(), dto.maxSize());
+    }
+
+    private ContentImagesView toGenerated(
+            ru.kpfu.itis.sorokin.sdevpoint.dto.ContentImagesView dto) {
+        List<ContentImageView> images = dto.images().stream()
+                .map(this::toGenerated)
+                .toList();
+        return new ContentImagesView(images, toGenerated(dto.limit()));
+    }
+
+    private ContentImageView toGenerated(
+            ru.kpfu.itis.sorokin.sdevpoint.dto.ContentImageView dto) {
+        return new ContentImageView(
+                dto.publicId(),
+                dto.originalName(),
+                dto.size(),
+                dto.contentType(),
+                URI.create(dto.url())
+        );
     }
 }
