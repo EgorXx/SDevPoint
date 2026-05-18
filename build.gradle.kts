@@ -46,6 +46,7 @@ dependencies {
 	implementation("com.vladsch.flexmark:flexmark-ext-autolink:${flexmarkVersion}")
 	implementation("org.jsoup:jsoup:1.21.2")
 	implementation("com.squareup.okhttp3:okhttp:${okhttpVersion}")
+	implementation("org.springframework.boot:spring-boot-starter-cache")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -2,6 +2,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -191,6 +192,7 @@ public class CaseService {
         );
     }
 
+    @CacheEvict(cacheNames = "aiSummary", key = "#caseEditDto.contentItemId")
     @Transactional
     public void update(CaseEditDto caseEditDto, Long userId) {
         Case caseEntity = caseRepository.findByContentItemId(caseEditDto.contentItemId())
@@ -215,6 +217,7 @@ public class CaseService {
         );
     }
 
+    @CacheEvict(cacheNames = "aiSummary", key = "#contentItemId")
     @Transactional
     public void deleteCase(Long contentItemId, Long userId) {
         ContentItem contentItem = contentItemRepository.findByIdAndOwnerIdAndItemType(

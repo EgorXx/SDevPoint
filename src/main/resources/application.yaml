@@ -32,10 +32,8 @@ spring:
       host: localhost
       port: 6379
 
-  servlet:
-    multipart:
-      max-file-size: 6MB
-      max-request-size: 10MB
+  cache:
+    type: redis
 
 app:
   scheduler:
@@ -97,6 +95,14 @@ app:
       summary-user-prompt-path: prompts/summary-user.ftlh
       explain-term-system-prompt-path: prompts/explain-term-system.ftlh
       explain-term-user-prompt-path: prompts/explain-term-user.ftlh
+
+  cache:
+    prefix-cache-name: "sdevpoint:cache:"
+    default-ttl: 30m
+    ai-summary:
+      cache-name: "aiSummary"
+      ttl: 1h
+
 
 mail:
   sender: SDevPoint

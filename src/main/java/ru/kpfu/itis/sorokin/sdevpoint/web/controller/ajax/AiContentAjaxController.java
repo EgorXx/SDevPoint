@@ -1,5 +1,6 @@
 package ru.kpfu.itis.sorokin.sdevpoint.web.controller.ajax;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class AiContentAjaxController {
     @PostMapping("/api/content/{contentId}/ai/explain")
     public AiExplainTermResponse explainTerm(
             @PathVariable Long contentId,
-            @RequestBody ExplainTermRequest request,
+            @Valid @RequestBody ExplainTermRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return aiContentService.explainTerm(

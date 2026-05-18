@@ -1,5 +1,4 @@
-
-#import "/spring.ftl" as spring>
+<#import "/spring.ftl" as spring>
 
 <#assign pageContentItemId = contentItemId>
 
