@@ -9,6 +9,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.ai.client.AiClient;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiCompletionRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiMessage;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiSummaryResponse;
+import ru.kpfu.itis.sorokin.sdevpoint.ai.entity.AiUsageType;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.exception.AiProviderException;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.properties.AiContentProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.AiServiceUnavailableException;
@@ -27,10 +28,13 @@ public class AiContentCacheService {
     private final AiPromptService aiPromptService;
     private final AiContentProperties aiContentProperties;
     private final AiContentTextService aiContentTextService;
+    private final AiUsageLimitService aiUsageLimitService;
 
     @Cacheable(value = "aiSummary", key = "#contentItemId")
     @Transactional(readOnly = true)
-    public AiSummaryResponse getOrGenerateSummary(Long contentItemId) {
+    public AiSummaryResponse getOrGenerateSummary(Long contentItemId, Long userId) {
+        aiUsageLimitService.checkAndConsume(userId, AiUsageType.SUMMARY);
+
         String contentText = aiContentTextService.loadContentText(contentItemId);
 
         String limitedText = aiTextProcessor.trimToLimit(

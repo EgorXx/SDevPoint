@@ -9,14 +9,10 @@ import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiCompletionRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiExplainTermResponse;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiMessage;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiSummaryResponse;
+import ru.kpfu.itis.sorokin.sdevpoint.ai.entity.AiUsageType;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.exception.AiProviderException;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.properties.AiContentProperties;
-import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.AiServiceUnavailableException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.ArticleRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.CaseRepository;
-import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 
 import java.util.List;
 
@@ -31,16 +27,19 @@ public class AiContentService {
     private final AiContentAccessService aiContentAccessService;
     private final AiContentCacheService aiContentCacheService;
     private final AiContentTextService aiContentTextService;
+    private final AiUsageLimitService aiUsageLimitService;
 
     public AiSummaryResponse getSummary(Long contentItemId, Long userId) {
         aiContentAccessService.checkAccess(contentItemId, userId);
 
-        return aiContentCacheService.getOrGenerateSummary(contentItemId);
+        return aiContentCacheService.getOrGenerateSummary(contentItemId, userId);
     }
 
     @Transactional(readOnly = true)
     public AiExplainTermResponse explainTerm(Long contentId, Long userId, String term) {
         aiContentAccessService.checkAccess(contentId, userId);
+
+        aiUsageLimitService.checkAndConsume(userId, AiUsageType.EXPLAIN_TERM);
 
         String contentText = aiContentTextService.loadContentText(contentId);
 

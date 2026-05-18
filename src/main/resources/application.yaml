@@ -96,12 +96,22 @@ app:
       explain-term-system-prompt-path: prompts/explain-term-system.ftlh
       explain-term-user-prompt-path: prompts/explain-term-user.ftlh
 
+    usage-limit:
+      summary:
+        cooldown: 1m
+        daily-limit: 10
+
+      explain-term:
+        cooldown: 30s
+        daily-limit: 30
+
   cache:
     prefix-cache-name: "sdevpoint:cache:"
     default-ttl: 30m
     ai-summary:
       cache-name: "aiSummary"
       ttl: 1h
+
 
 
 mail:
