@@ -10,6 +10,7 @@ version = "0.0.1-SNAPSHOT"
 
 val postgresql: String by project
 val flexmarkVersion: String by project
+val okhttpVersion: String by project
 
 java {
 	toolchain {
@@ -44,6 +45,7 @@ dependencies {
 	implementation("com.vladsch.flexmark:flexmark-ext-gfm-tasklist:${flexmarkVersion}")
 	implementation("com.vladsch.flexmark:flexmark-ext-autolink:${flexmarkVersion}")
 	implementation("org.jsoup:jsoup:1.21.2")
+	implementation("com.squareup.okhttp3:okhttp:${okhttpVersion}")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

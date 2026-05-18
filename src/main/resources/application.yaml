@@ -74,6 +74,29 @@ app:
       thread-name-prefix: email-async-
       wait-for-tasks-to-complete-on-shutdown: true
       await-termination-seconds: 30
+  ai:
+    provider: openrouter
+    content:
+      max-summary-input-chars: 20000
+      max-explain-input-chars: 12000
+      max-term-length: 100
+
+    openrouter:
+      base-url: https://openrouter.ai/api/v1
+      api-key: ${OPENROUTER_API_KEY}
+      model: deepseek/deepseek-v4-flash:free
+      connect-timeout: 5s
+      read-timeout: 30s
+      temperature: 0.2
+      max-tokens: 700
+      site-url: http://localhost:8080
+      site-title: SDevPoint
+
+    prompts:
+      summary-system-prompt-path: prompts/summary-system.ftlh
+      summary-user-prompt-path: prompts/summary-user.ftlh
+      explain-term-system-prompt-path: prompts/explain-term-system.ftlh
+      explain-term-user-prompt-path: prompts/explain-term-user.ftlh
 
 mail:
   sender: SDevPoint

@@ -1,5 +1,3 @@
-<#-- templates/case/view.ftlh -->
-
 <#assign currentCase = .vars["case"]>
 
 <!DOCTYPE html>
@@ -7,6 +5,11 @@
 <head>
     <meta charset="UTF-8">
     <title>${currentCase.title()}</title>
+
+    <#if _csrf??>
+        <meta name="_csrf" content="${_csrf.token}">
+        <meta name="_csrf_header" content="${_csrf.headerName}">
+    </#if>
 
     <style>
         :root {
@@ -16,10 +19,20 @@
             --text-muted: #6b7280;
             --border: #e5e7eb;
             --link: #2563eb;
+            --link-hover: #1d4ed8;
             --warning-bg: #fff7ed;
             --warning-border: #fed7aa;
             --warning-text: #9a3412;
             --solution-bg: #f8fafc;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --success: #15803d;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --ai-warning: #b45309;
+            --ai-warning-bg: #fffbeb;
+            --ai-warning-border: #fde68a;
         }
 
         * {
@@ -302,6 +315,134 @@
             opacity: 0.65;
         }
 
+        .case-ai {
+            margin-top: 24px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #f9fafb;
+        }
+
+        .case-ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .case-ai-title {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.3;
+            color: #111827;
+        }
+
+        .case-ai-description {
+            margin: 6px 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .case-ai-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .ai-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 8px 13px;
+            border-radius: 10px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: var(--link);
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .ai-button:hover {
+            color: var(--link-hover);
+            border-color: #93c5fd;
+            background: #dbeafe;
+        }
+
+        .ai-button:disabled {
+            cursor: default;
+            opacity: 0.65;
+        }
+
+        .ai-selected-term {
+            display: none;
+            margin-top: 12px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .ai-selected-term strong {
+            color: #111827;
+        }
+
+        .ai-message {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .ai-message-error {
+            display: block;
+            color: var(--danger);
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+        }
+
+        .ai-message-warning {
+            display: block;
+            color: var(--ai-warning);
+            background: var(--ai-warning-bg);
+            border: 1px solid var(--ai-warning-border);
+        }
+
+        .ai-message-success {
+            display: block;
+            color: var(--success);
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+        }
+
+        .ai-result {
+            display: none;
+            margin-top: 16px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #ffffff;
+        }
+
+        .ai-result-title {
+            margin: 0 0 10px;
+            font-size: 17px;
+            line-height: 1.3;
+            color: #111827;
+        }
+
+        .ai-result-content {
+            margin: 0;
+            color: #374151;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
         .empty-content {
             color: var(--text-muted);
             font-style: italic;
@@ -327,6 +468,14 @@
 
             .section-title {
                 font-size: 23px;
+            }
+
+            .case-ai-header {
+                display: block;
+            }
+
+            .case-ai-actions {
+                margin-top: 14px;
             }
         }
     </style>
@@ -365,56 +514,90 @@
                     </button>
                 </div>
             </#if>
-        </header>
 
-        <section class="section">
-            <h2 class="section-title">Описание кейса</h2>
+            <section class="case-ai">
+                <div class="case-ai-header">
+                    <div>
+                        <h2 class="case-ai-title">AI-помощник</h2>
+                        <p class="case-ai-description">
+                            Можно получить краткое содержание кейса или объяснить выделенный термин.
+                        </p>
+                    </div>
 
-            <div class="content">
-                <#if currentCase.htmlTextDescription()?has_content>
-                    ${currentCase.htmlTextDescription()?no_esc}
-                <#else>
-                    <p class="empty-content">Описание кейса отсутствует.</p>
-                </#if>
-            </div>
-        </section>
-
-        <section class="section">
-            <h2 class="section-title">Решение</h2>
-
-            <#if !currentCase.hasSolution()>
-                <div class="empty-solution">
-                    Решения этого кейса пока что нет.
-                </div>
-            <#else>
-                <div class="solution-preview">
-                    <div class="solution-actions">
-                        <button
-                                id="toggleSolutionButton"
-                                class="solution-button"
-                                type="button"
-                                aria-expanded="false"
-                                aria-controls="solutionContent">
-                            Показать решение
+                    <div class="case-ai-actions">
+                        <button id="aiSummaryButton" class="ai-button" type="button">
+                            Получить summary
                         </button>
 
-                        <span class="solution-hint">
-                            Решение скрыто, чтобы можно было сначала попробовать решить кейс самостоятельно.
-                        </span>
-                    </div>
-
-                    <div id="solutionContent" class="solution-content" hidden>
-                        <div class="content">
-                            <#if currentCase.htmlTextSolution()?has_content>
-                                ${currentCase.htmlTextSolution()?no_esc}
-                            <#else>
-                                <p class="empty-content">Текст решения отсутствует.</p>
-                            </#if>
-                        </div>
+                        <button id="aiExplainButton" class="ai-button" type="button">
+                            Объяснить выделенный термин
+                        </button>
                     </div>
                 </div>
-            </#if>
-        </section>
+
+                <div id="aiSelectedTerm" class="ai-selected-term">
+                    Выбранный термин: <strong id="aiSelectedTermText"></strong>
+                </div>
+
+                <div id="aiMessage" class="ai-message"></div>
+
+                <div id="aiResult" class="ai-result">
+                    <h3 id="aiResultTitle" class="ai-result-title"></h3>
+                    <p id="aiResultContent" class="ai-result-content"></p>
+                </div>
+            </section>
+        </header>
+
+        <div id="caseAiContent">
+            <section class="section">
+                <h2 class="section-title">Описание кейса</h2>
+
+                <div class="content">
+                    <#if currentCase.htmlTextDescription()?has_content>
+                        ${currentCase.htmlTextDescription()?no_esc}
+                    <#else>
+                        <p class="empty-content">Описание кейса отсутствует.</p>
+                    </#if>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">Решение</h2>
+
+                <#if !currentCase.hasSolution()>
+                    <div class="empty-solution">
+                        Решения этого кейса пока что нет.
+                    </div>
+                <#else>
+                    <div class="solution-preview">
+                        <div class="solution-actions">
+                            <button
+                                    id="toggleSolutionButton"
+                                    class="solution-button"
+                                    type="button"
+                                    aria-expanded="false"
+                                    aria-controls="solutionContent">
+                                Показать решение
+                            </button>
+
+                            <span class="solution-hint">
+                                Решение скрыто, чтобы можно было сначала попробовать решить кейс самостоятельно.
+                            </span>
+                        </div>
+
+                        <div id="solutionContent" class="solution-content" hidden>
+                            <div class="content">
+                                <#if currentCase.htmlTextSolution()?has_content>
+                                    ${currentCase.htmlTextSolution()?no_esc}
+                                <#else>
+                                    <p class="empty-content">Текст решения отсутствует.</p>
+                                </#if>
+                            </div>
+                        </div>
+                    </div>
+                </#if>
+            </section>
+        </div>
     </article>
 </main>
 
@@ -422,7 +605,37 @@
     document.addEventListener("DOMContentLoaded", function () {
         initSolutionToggle();
         initReactions();
+        initAi();
     });
+
+    function getCsrfData() {
+        const csrfTokenMeta = document.querySelector("meta[name='_csrf']");
+        const csrfHeaderMeta = document.querySelector("meta[name='_csrf_header']");
+
+        return {
+            token: csrfTokenMeta ? csrfTokenMeta.getAttribute("content") : null,
+            headerName: csrfHeaderMeta ? csrfHeaderMeta.getAttribute("content") : null
+        };
+    }
+
+    function buildHeaders(jsonBody) {
+        const csrf = getCsrfData();
+
+        const headers = {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        };
+
+        if (csrf.headerName && csrf.token) {
+            headers[csrf.headerName] = csrf.token;
+        }
+
+        if (jsonBody) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        return headers;
+    }
 
     function initSolutionToggle() {
         const toggleSolutionButton = document.getElementById("toggleSolutionButton");
@@ -446,9 +659,6 @@
     function initReactions() {
         const contentItemId = "${currentCase.contentId()}";
 
-        const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
-        const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
-
         const likeButton = document.getElementById("likeButton");
         const dislikeButton = document.getElementById("dislikeButton");
         const likesCount = document.getElementById("likesCount");
@@ -456,16 +666,6 @@
 
         if (!likeButton || !dislikeButton || !likesCount || !dislikesCount) {
             return;
-        }
-
-        function buildHeaders() {
-            const headers = {};
-
-            if (csrfHeaderName && csrfToken) {
-                headers[csrfHeaderName] = csrfToken;
-            }
-
-            return headers;
         }
 
         function setButtonsDisabled(disabled) {
@@ -497,11 +697,12 @@
             try {
                 const response = await fetch(url, {
                     method: "POST",
-                    headers: buildHeaders()
+                    headers: buildHeaders(false),
+                    credentials: "same-origin"
                 });
 
                 if (response.status === 401 || response.status === 403) {
-                    window.location.href = "/login";
+                    window.location.href = "/auth/login";
                     return;
                 }
 
@@ -530,7 +731,262 @@
             sendReaction("dislike");
         });
     }
-</script>
 
-</body>
-</html>
+    function initAi() {
+        const contentItemId = "${currentCase.contentId()}";
+
+        const caseAiContent = document.getElementById("caseAiContent");
+
+        const aiSummaryButton = document.getElementById("aiSummaryButton");
+        const aiExplainButton = document.getElementById("aiExplainButton");
+        const aiSelectedTerm = document.getElementById("aiSelectedTerm");
+        const aiSelectedTermText = document.getElementById("aiSelectedTermText");
+        const aiMessage = document.getElementById("aiMessage");
+        const aiResult = document.getElementById("aiResult");
+        const aiResultTitle = document.getElementById("aiResultTitle");
+        const aiResultContent = document.getElementById("aiResultContent");
+
+        if (!caseAiContent
+            || !aiSummaryButton
+            || !aiExplainButton
+            || !aiSelectedTerm
+            || !aiSelectedTermText
+            || !aiMessage
+            || !aiResult
+            || !aiResultTitle
+            || !aiResultContent) {
+            return;
+        }
+
+        let aiRequestInProgress = false;
+
+        function showAiMessage(message, type) {
+            aiMessage.textContent = message || "Произошла ошибка";
+            aiMessage.className = "ai-message ai-message-" + type;
+        }
+
+        function clearAiMessage() {
+            aiMessage.textContent = "";
+            aiMessage.className = "ai-message";
+        }
+
+        function showAiResult(title, content) {
+            aiResultTitle.textContent = title;
+            aiResultContent.textContent = content;
+            aiResult.style.display = "block";
+        }
+
+        function hideAiResult() {
+            aiResultTitle.textContent = "";
+            aiResultContent.textContent = "";
+            aiResult.style.display = "none";
+        }
+
+        function setAiLoading(loading) {
+            aiRequestInProgress = loading;
+            aiSummaryButton.disabled = loading;
+            aiExplainButton.disabled = loading;
+
+            if (loading) {
+                showAiMessage("AI формирует ответ, подождите...", "warning");
+            }
+        }
+
+        async function extractErrorMessage(response) {
+            const defaultMessage = "Не удалось выполнить AI-запрос";
+
+            const contentType = response.headers.get("content-type");
+
+            if (contentType && contentType.includes("application/json")) {
+                try {
+                    const body = await response.json();
+
+                    if (body.message) {
+                        return body.message;
+                    }
+
+                    if (body.error) {
+                        return body.error;
+                    }
+
+                    return defaultMessage;
+                } catch (e) {
+                    return defaultMessage;
+                }
+            }
+
+            try {
+                const text = await response.text();
+
+                if (text && text.trim().length > 0 && !text.includes("<!DOCTYPE html")) {
+                    return text;
+                }
+
+                return defaultMessage;
+            } catch (e) {
+                return defaultMessage;
+            }
+        }
+
+        function isUnauthorizedResponse(response) {
+            return response.status === 401
+                || response.status === 403;
+        }
+
+        async function readJsonResponse(response) {
+            const contentType = response.headers.get("content-type");
+
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Response is not json");
+            }
+
+            return await response.json();
+        }
+
+        function getSelectedTextInsideCase() {
+            const selection = window.getSelection();
+
+            if (!selection || selection.rangeCount === 0) {
+                return "";
+            }
+
+            const selectedText = selection.toString().trim();
+
+            if (!selectedText) {
+                return "";
+            }
+
+            const range = selection.getRangeAt(0);
+            let container = range.commonAncestorContainer;
+
+            if (container.nodeType === Node.TEXT_NODE) {
+                container = container.parentNode;
+            }
+
+            if (!caseAiContent.contains(container)) {
+                return "";
+            }
+
+            return selectedText;
+        }
+
+        function updateSelectedTermView() {
+            const selectedText = getSelectedTextInsideCase();
+
+            if (!selectedText) {
+                aiSelectedTerm.style.display = "none";
+                aiSelectedTermText.textContent = "";
+                return;
+            }
+
+            aiSelectedTermText.textContent = selectedText;
+            aiSelectedTerm.style.display = "block";
+        }
+
+        document.addEventListener("selectionchange", updateSelectedTermView);
+
+        async function sendAiSummaryRequest() {
+            if (aiRequestInProgress) {
+                return;
+            }
+
+            hideAiResult();
+            clearAiMessage();
+            setAiLoading(true);
+
+            try {
+                const response = await fetch("/api/content/" + contentItemId + "/ai/summary", {
+                    method: "POST",
+                    headers: buildHeaders(false),
+                    credentials: "same-origin"
+                });
+
+                if (isUnauthorizedResponse(response)) {
+                    hideAiResult();
+                    showAiMessage("Для использования AI-функций необходимо войти в аккаунт.", "warning");
+                    return;
+                }
+
+                if (!response.ok) {
+                    const message = await extractErrorMessage(response);
+                    hideAiResult();
+                    showAiMessage(message, "error");
+                    return;
+                }
+
+                const body = await readJsonResponse(response);
+
+                clearAiMessage();
+                showAiResult("Краткое содержание", body.summary || "AI вернул пустой ответ");
+            } catch (e) {
+                console.error(e);
+                hideAiResult();
+                showAiMessage("Не удалось получить краткое содержание кейса", "error");
+            } finally {
+                setAiLoading(false);
+            }
+        }
+
+        async function sendAiExplainRequest() {
+            if (aiRequestInProgress) {
+                return;
+            }
+
+            const selectedText = getSelectedTextInsideCase();
+
+            if (!selectedText) {
+                hideAiResult();
+                showAiMessage("Выделите термин в описании или решении кейса, который нужно объяснить.", "warning");
+                return;
+            }
+
+            hideAiResult();
+            clearAiMessage();
+            setAiLoading(true);
+
+            try {
+                const response = await fetch("/api/content/" + contentItemId + "/ai/explain", {
+                    method: "POST",
+                    headers: buildHeaders(true),
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        term: selectedText
+                    })
+                });
+
+                if (isUnauthorizedResponse(response)) {
+                    hideAiResult();
+                    showAiMessage("Для использования AI-функций необходимо войти в аккаунт.", "warning");
+                    return;
+                }
+
+                if (!response.ok) {
+                    const message = await extractErrorMessage(response);
+                    hideAiResult();
+                    showAiMessage(message, "error");
+                    return;
+                }
+
+                const body = await readJsonResponse(response);
+
+                clearAiMessage();
+                showAiResult(
+                    "Объяснение термина: " + (body.term || selectedText),
+                    body.explanation || "AI вернул пустой ответ"
+                );
+            } catch (e) {
+                console.error(e);
+                hideAiResult();
+                showAiMessage("Не удалось получить объяснение термина", "error");
+            } finally {
+                setAiLoading(false);
+            }
+        }
+
+        aiSummaryButton.addEventListener("click", sendAiSummaryRequest);
+        aiExplainButton.addEventListener("click", sendAiExplainRequest);
+    }
+    </script>
+
+    </body>
+    </html>

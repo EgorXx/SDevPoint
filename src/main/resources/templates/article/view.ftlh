@@ -1,5 +1,3 @@
-<#-- templates/articles/view.ftlh -->
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -14,7 +12,17 @@
             --text-muted: #6b7280;
             --border: #e5e7eb;
             --link: #2563eb;
+            --link-hover: #1d4ed8;
             --code-bg: #f3f4f6;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --success: #15803d;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --warning: #b45309;
+            --warning-bg: #fffbeb;
+            --warning-border: #fde68a;
         }
 
         * {
@@ -232,6 +240,134 @@
             opacity: 0.65;
         }
 
+        .article-ai {
+            margin-top: 24px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #f9fafb;
+        }
+
+        .article-ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .article-ai-title {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.3;
+            color: #111827;
+        }
+
+        .article-ai-description {
+            margin: 6px 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .article-ai-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .ai-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 8px 13px;
+            border-radius: 10px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: var(--link);
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .ai-button:hover {
+            color: var(--link-hover);
+            border-color: #93c5fd;
+            background: #dbeafe;
+        }
+
+        .ai-button:disabled {
+            cursor: default;
+            opacity: 0.65;
+        }
+
+        .ai-selected-term {
+            display: none;
+            margin-top: 12px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .ai-selected-term strong {
+            color: #111827;
+        }
+
+        .ai-message {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .ai-message-error {
+            display: block;
+            color: var(--danger);
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+        }
+
+        .ai-message-warning {
+            display: block;
+            color: var(--warning);
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+        }
+
+        .ai-message-success {
+            display: block;
+            color: var(--success);
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+        }
+
+        .ai-result {
+            display: none;
+            margin-top: 16px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #ffffff;
+        }
+
+        .ai-result-title {
+            margin: 0 0 10px;
+            font-size: 17px;
+            line-height: 1.3;
+            color: #111827;
+        }
+
+        .ai-result-content {
+            margin: 0;
+            color: #374151;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
         .empty-content {
             color: var(--text-muted);
             font-style: italic;
@@ -254,99 +390,18 @@
             .article-content {
                 font-size: 16px;
             }
+
+            .article-ai-header {
+                display: block;
+            }
+
+            .article-ai-actions {
+                margin-top: 14px;
+            }
         }
     </style>
 </head>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const contentItemId = "${article.id()}";
 
-        const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
-        const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
-
-        const likeButton = document.getElementById("likeButton");
-        const dislikeButton = document.getElementById("dislikeButton");
-        const likesCount = document.getElementById("likesCount");
-        const dislikesCount = document.getElementById("dislikesCount");
-
-        if (!likeButton || !dislikeButton || !likesCount || !dislikesCount) {
-            console.error("Reaction elements not found");
-            return;
-        }
-
-        function buildHeaders() {
-            const headers = {};
-
-            if (csrfHeaderName && csrfToken) {
-                headers[csrfHeaderName] = csrfToken;
-            }
-
-            return headers;
-        }
-
-        function setButtonsDisabled(disabled) {
-            likeButton.disabled = disabled;
-            dislikeButton.disabled = disabled;
-        }
-
-        function updateReactionView(reaction) {
-            likesCount.textContent = reaction.likesCount;
-            dislikesCount.textContent = reaction.dislikesCount;
-
-            likeButton.classList.remove("active-like");
-            dislikeButton.classList.remove("active-dislike");
-
-            if (reaction.currentReaction === "LIKE") {
-                likeButton.classList.add("active-like");
-            }
-
-            if (reaction.currentReaction === "DISLIKE") {
-                dislikeButton.classList.add("active-dislike");
-            }
-        }
-
-        async function sendReaction(type) {
-            const url = "/api/content-items/" + contentItemId + "/reactions/" + type;
-
-            setButtonsDisabled(true);
-
-            try {
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: buildHeaders()
-                });
-
-                if (response.status === 401 || response.status === 403) {
-                    window.location.href = "/login";
-                    return;
-                }
-
-                if (!response.ok) {
-                    alert("Не удалось обновить реакцию");
-                    setButtonsDisabled(false);
-                    return;
-                }
-
-                const reaction = await response.json();
-
-                updateReactionView(reaction);
-                setButtonsDisabled(false);
-            } catch (e) {
-                console.error(e);
-                alert("Не удалось обновить реакцию");
-                setButtonsDisabled(false);
-            }
-        }
-
-        likeButton.addEventListener("click", function () {
-            sendReaction("like");
-        });
-
-        dislikeButton.addEventListener("click", function () {
-            sendReaction("dislike");
-        });
-    });
-</script>
 <body>
 <main class="page">
     <article class="article">
@@ -380,9 +435,41 @@
                     </button>
                 </div>
             </#if>
+
+            <section class="article-ai">
+                <div class="article-ai-header">
+                    <div>
+                        <h2 class="article-ai-title">AI-помощник</h2>
+                        <p class="article-ai-description">
+                            Можно получить краткое содержание статьи или объяснить выделенный термин.
+                        </p>
+                    </div>
+
+                    <div class="article-ai-actions">
+                        <button id="aiSummaryButton" class="ai-button" type="button">
+                            Получить summary
+                        </button>
+
+                        <button id="aiExplainButton" class="ai-button" type="button">
+                            Объяснить выделенный термин
+                        </button>
+                    </div>
+                </div>
+
+                <div id="aiSelectedTerm" class="ai-selected-term">
+                    Выбранный термин: <strong id="aiSelectedTermText"></strong>
+                </div>
+
+                <div id="aiMessage" class="ai-message"></div>
+
+                <div id="aiResult" class="ai-result">
+                    <h3 id="aiResultTitle" class="ai-result-title"></h3>
+                    <p id="aiResultContent" class="ai-result-content"></p>
+                </div>
+            </section>
         </header>
 
-        <section class="article-content">
+        <section id="articleContent" class="article-content">
             <#if article.htmlText()?has_content>
                 ${article.htmlText()?no_esc}
             <#else>
@@ -392,5 +479,353 @@
     </article>
 </main>
 
-</body>
-</html>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const contentItemId = "${article.id()}";
+
+        const csrfHeaderName = <#if _csrf??>"${_csrf.headerName}"<#else>null</#if>;
+        const csrfToken = <#if _csrf??>"${_csrf.token}"<#else>null</#if>;
+
+        const articleContent = document.getElementById("articleContent");
+
+        const likeButton = document.getElementById("likeButton");
+        const dislikeButton = document.getElementById("dislikeButton");
+        const likesCount = document.getElementById("likesCount");
+        const dislikesCount = document.getElementById("dislikesCount");
+
+        const aiSummaryButton = document.getElementById("aiSummaryButton");
+        const aiExplainButton = document.getElementById("aiExplainButton");
+        const aiSelectedTerm = document.getElementById("aiSelectedTerm");
+        const aiSelectedTermText = document.getElementById("aiSelectedTermText");
+        const aiMessage = document.getElementById("aiMessage");
+        const aiResult = document.getElementById("aiResult");
+        const aiResultTitle = document.getElementById("aiResultTitle");
+        const aiResultContent = document.getElementById("aiResultContent");
+
+        let aiRequestInProgress = false;
+
+        function buildHeaders(jsonBody) {
+            const headers = {
+                "Accept": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
+            };
+
+            if (csrfHeaderName && csrfToken) {
+                headers[csrfHeaderName] = csrfToken;
+            }
+
+            if (jsonBody) {
+                headers["Content-Type"] = "application/json";
+            }
+
+            return headers;
+        }
+
+        function showAiMessage(message, type) {
+            aiMessage.textContent = message || "Произошла ошибка";
+            aiMessage.className = "ai-message ai-message-" + type;
+        }
+
+        function clearAiMessage() {
+            aiMessage.textContent = "";
+            aiMessage.className = "ai-message";
+        }
+
+        function showAiResult(title, content) {
+            aiResultTitle.textContent = title;
+            aiResultContent.textContent = content;
+            aiResult.style.display = "block";
+        }
+
+        function hideAiResult() {
+            aiResultTitle.textContent = "";
+            aiResultContent.textContent = "";
+            aiResult.style.display = "none";
+        }
+
+        function setAiLoading(loading) {
+            aiRequestInProgress = loading;
+
+            if (aiSummaryButton) {
+                aiSummaryButton.disabled = loading;
+            }
+
+            if (aiExplainButton) {
+                aiExplainButton.disabled = loading;
+            }
+
+            if (loading) {
+                showAiMessage("AI формирует ответ, подождите...", "warning");
+            }
+        }
+
+        async function extractErrorMessage(response) {
+            const defaultMessage = "Не удалось выполнить AI-запрос";
+
+            const contentType = response.headers.get("content-type");
+
+            if (contentType && contentType.includes("application/json")) {
+                try {
+                    const body = await response.json();
+
+                    if (body.message) {
+                        return body.message;
+                    }
+
+                    if (body.error) {
+                        return body.error;
+                    }
+
+                    return defaultMessage;
+                } catch (e) {
+                    return defaultMessage;
+                }
+            }
+
+            try {
+                const text = await response.text();
+
+                if (text && text.trim().length > 0 && !text.includes("<!DOCTYPE html")) {
+                    return text;
+                }
+
+                return defaultMessage;
+            } catch (e) {
+                return defaultMessage;
+            }
+        }
+
+        function isUnauthorizedResponse(response) {
+            return response.status === 401
+                || response.status === 403
+                || (response.redirected && response.url.includes("/login"));
+        }
+
+        async function readJsonResponse(response) {
+            const contentType = response.headers.get("content-type");
+
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Response is not json");
+            }
+
+            return await response.json();
+        }
+
+        function getSelectedTextInsideArticle() {
+            const selection = window.getSelection();
+
+            if (!selection || selection.rangeCount === 0) {
+                return "";
+            }
+
+            const selectedText = selection.toString().trim();
+
+            if (!selectedText) {
+                return "";
+            }
+
+            const range = selection.getRangeAt(0);
+            let container = range.commonAncestorContainer;
+
+            if (container.nodeType === Node.TEXT_NODE) {
+                container = container.parentNode;
+            }
+
+            if (!articleContent || !articleContent.contains(container)) {
+                return "";
+            }
+
+            return selectedText;
+        }
+
+        function updateSelectedTermView() {
+            const selectedText = getSelectedTextInsideArticle();
+
+            if (!selectedText) {
+                aiSelectedTerm.style.display = "none";
+                aiSelectedTermText.textContent = "";
+                return;
+            }
+
+            aiSelectedTermText.textContent = selectedText;
+            aiSelectedTerm.style.display = "block";
+        }
+
+        document.addEventListener("selectionchange", updateSelectedTermView);
+
+        async function sendAiSummaryRequest() {
+            if (aiRequestInProgress) {
+                return;
+            }
+
+            hideAiResult();
+            clearAiMessage();
+            setAiLoading(true);
+
+            try {
+                const response = await fetch("/api/content/" + contentItemId + "/ai/summary", {
+                    method: "POST",
+                    headers: buildHeaders(false),
+                    credentials: "same-origin"
+                });
+
+                if (isUnauthorizedResponse(response)) {
+                    hideAiResult();
+                    showAiMessage("Для использования AI-функций необходимо войти в аккаунт.", "warning");
+                    return;
+                }
+
+                if (!response.ok) {
+                    const message = await extractErrorMessage(response);
+                    hideAiResult();
+                    showAiMessage(message, "error");
+                    return;
+                }
+
+                const body = await readJsonResponse(response);
+
+                clearAiMessage();
+                showAiResult("Краткое содержание", body.summary || "AI вернул пустой ответ");
+            } catch (e) {
+                console.error(e);
+                hideAiResult();
+                showAiMessage("Не удалось получить краткое содержание контента", "error");
+            } finally {
+                setAiLoading(false);
+            }
+        }
+
+        async function sendAiExplainRequest() {
+            if (aiRequestInProgress) {
+                return;
+            }
+
+            const selectedText = getSelectedTextInsideArticle();
+
+            if (!selectedText) {
+                hideAiResult();
+                showAiMessage("Выделите термин в тексте статьи, который нужно объяснить.", "warning");
+                return;
+            }
+
+            hideAiResult();
+            clearAiMessage();
+            setAiLoading(true);
+
+            try {
+                const response = await fetch("/api/content/" + contentItemId + "/ai/explain", {
+                    method: "POST",
+                    headers: buildHeaders(true),
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        term: selectedText
+                    })
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    hideAiResult()
+                    showAiMessage("Для использования AI-функций необходимо войти в аккаунт.", "warning");
+                    return;
+                }
+
+                if (!response.ok) {
+                    const message = await extractErrorMessage(response);
+                    hideAiResult();
+                    showAiMessage(message, "error");
+                    return;
+                }
+
+                const body = await readJsonResponse(response);
+
+                clearAiMessage();
+                showAiResult(
+                    "Объяснение термина: " + (body.term || selectedText),
+                    body.explanation || "AI вернул пустой ответ"
+                );
+            } catch (e) {
+                console.error(e);
+                hideAiResult();
+                showAiMessage("Не удалось получить объяснение термина", "error");
+            } finally {
+                setAiLoading(false);
+            }
+        }
+
+        if (aiSummaryButton) {
+            aiSummaryButton.addEventListener("click", sendAiSummaryRequest);
+        }
+
+        if (aiExplainButton) {
+            aiExplainButton.addEventListener("click", sendAiExplainRequest);
+        }
+
+        if (likeButton && dislikeButton && likesCount && dislikesCount) {
+            function setReactionButtonsDisabled(disabled) {
+                likeButton.disabled = disabled;
+                dislikeButton.disabled = disabled;
+            }
+
+            function updateReactionView(reaction) {
+                likesCount.textContent = reaction.likesCount;
+                dislikesCount.textContent = reaction.dislikesCount;
+
+                likeButton.classList.remove("active-like");
+                dislikeButton.classList.remove("active-dislike");
+
+                if (reaction.currentReaction === "LIKE") {
+                    likeButton.classList.add("active-like");
+                }
+
+                if (reaction.currentReaction === "DISLIKE") {
+                    dislikeButton.classList.add("active-dislike");
+                }
+            }
+
+            async function sendReaction(type) {
+                const url = "/api/content-items/" + contentItemId + "/reactions/" + type;
+
+                setReactionButtonsDisabled(true);
+
+                try {
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: buildHeaders(false),
+                        credentials: "same-origin"
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        alert("Для реакции необходимо войти в аккаунт");
+                        setReactionButtonsDisabled(false);
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        alert("Не удалось обновить реакцию");
+                        setReactionButtonsDisabled(false);
+                        return;
+                    }
+
+                    const reaction = await response.json();
+
+                    updateReactionView(reaction);
+                    setReactionButtonsDisabled(false);
+                } catch (e) {
+                    console.error(e);
+                    alert("Не удалось обновить реакцию");
+                    setReactionButtonsDisabled(false);
+                }
+            }
+
+            likeButton.addEventListener("click", function () {
+                sendReaction("like");
+            });
+
+            dislikeButton.addEventListener("click", function () {
+                sendReaction("dislike");
+            });
+        }
+    });
+    </script>
+
+    </body>
+    </html>

@@ -4,10 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.ImageStorageException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
+import ru.kpfu.itis.sorokin.sdevpoint.exception.*;
 import ru.kpfu.itis.sorokin.sdevpoint.web.dto.ErrorResponse;
 
 @RestControllerAdvice(basePackages = "ru.kpfu.itis.sorokin.sdevpoint.web.controller.ajax")
@@ -36,5 +33,12 @@ public class AjaxExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("Не удалось загрузить изображение"));
+    }
+
+    @ExceptionHandler(AiServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleAiServiceUnavailable(AiServiceUnavailableException e) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(e.getMessage()));
     }
 }
