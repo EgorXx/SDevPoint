@@ -1,0 +1,189 @@
+###   csrf      — CSRF токен из HTML-форм
+###   draftId   — ID созданного черновика
+###   contentId — ID опубликованного контента
+
+### ===========================================
+### 1. GET страница логина — извлекаем CSRF токен
+### ===========================================
+GET http://localhost:8080/auth/login
+
+> {%
+    const body = response.body;
+    const match = body.match(/name="_csrf"\s+value="([^"]+)"/);
+    if (!match) {
+        throw new Error("CSRF token not found on login page");
+    }
+    client.global.set("csrf", match[1]);
+    console.log("OK: CSRF extracted: " + match[1].substring(0, 8) + "...");
+%}
+
+### ===========================================
+### 2. POST логин — следуем редиректу, проверяем что попали на главную
+### ===========================================
+POST http://localhost:8080/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+email=test@example.com&password=test123&_csrf={{csrf}}
+
+> {%
+    if (response.status !== 200) {
+        throw new Error("Login failed: expected 200, got " + response.status);
+    }
+    if (!response.body.includes("Личная база знаний")) {
+        throw new Error("Login failed: not redirected to home page (invalid credentials or CSRF)");
+    }
+
+    const body = response.body;
+    const match = body.match(/name="_csrf"\s+value="([^"]+)"/);
+    if (match) {
+        client.global.set("csrf", match[1]);
+    }
+    console.log("OK: login successful, on home page");
+%}
+
+### ===========================================
+### 3. POST создать черновик — @no-redirect, ловим draftId
+### ===========================================
+# @no-redirect
+POST http://localhost:8080/articles/drafts
+X-CSRF-TOKEN: {{csrf}}
+
+> {%
+    if (response.status !== 302) {
+        throw new Error("Create draft failed: expected 302, got " + response.status);
+    }
+    const location = response.headers.valueOf("Location");
+    if (!location) {
+        throw new Error("Location header missing");
+    }
+    const match = location.match(/\/articles\/drafts\/(\d+)\/edit/);
+    if (!match) {
+        throw new Error("Could not extract draftId from: " + location);
+    }
+    client.global.set("draftId", match[1]);
+    console.log("OK: draft created, id=" + match[1]);
+%}
+
+### ===========================================
+### 4. GET страница редактирования черновика — обновляем CSRF
+### ===========================================
+GET http://localhost:8080/articles/drafts/{{draftId}}/edit
+
+> {%
+    const body = response.body;
+    if (!body.includes('id="articleForm"')) {
+        throw new Error("Draft edit page not loaded (missing articleForm)");
+    }
+    const match = body.match(/name="_csrf"\s+value="([^"]+)"/);
+    if (match) {
+        client.global.set("csrf", match[1]);
+        console.log("OK: draft edit page loaded, CSRF updated");
+    }
+%}
+
+### ===========================================
+### 5. POST сохранить черновик (title + text)
+### ===========================================
+# @no-redirect
+POST http://localhost:8080/articles/drafts/{{draftId}}
+Content-Type: application/x-www-form-urlencoded
+
+title=Тестовая статья HTTP Client&text=%23%23%20Привет%0A%0AЭто%20текст%20тестовой%20статьи.%0A%0A%60%60%60java%0ASystem.out.println(%22Hello%22)%3B%0A%60%60%60&visibility=PUBLIC&_csrf={{csrf}}
+
+> {%
+    if (response.status !== 302) {
+        throw new Error("Save draft failed: expected 302, got " + response.status
+            + (response.status === 200 ? " (validation error)" : ""));
+    }
+    console.log("OK: draft saved, redirect to: " + response.headers.valueOf("Location"));
+%}
+
+### ===========================================
+### 6. POST опубликовать черновик
+### ===========================================
+# @no-redirect
+POST http://localhost:8080/articles/drafts/{{draftId}}/publish
+Content-Type: application/x-www-form-urlencoded
+
+title=Тестовая статья HTTP Client&text=%23%23%20Привет%0A%0AЭто%20текст%20тестовой%20статьи.%0A%0A%60%60%60java%0ASystem.out.println(%22Hello%22)%3B%0A%60%60%60&visibility=PUBLIC&_csrf={{csrf}}
+
+> {%
+    if (response.status !== 302) {
+        throw new Error("Publish failed: expected 302, got " + response.status
+            + (response.status === 200 ? " (validation error)" : ""));
+    }
+    // contentId не меняется после публикации
+    client.global.set("contentId", client.global.get("draftId"));
+    console.log("OK: article published (PENDING_REVIEW), id=" + client.global.get("contentId"));
+%}
+
+### ===========================================
+### 7. GET /my-content — проверяем что статья видна владельцу
+### ===========================================
+GET http://localhost:8080/my-content
+
+> {%
+    if (response.status !== 200) {
+        throw new Error("My-content page failed: " + response.status);
+    }
+    if (!response.body.includes("Тестовая статья HTTP Client")) {
+        throw new Error("Article not found on my-content page");
+    }
+    console.log("OK: article visible in my-content");
+%}
+
+### ===========================================
+### 8. GET просмотр статьи — владелец видит PENDING_REVIEW
+### ===========================================
+GET http://localhost:8080/articles/{{contentId}}
+
+> {%
+    if (response.status !== 200) {
+        throw new Error("Article view failed: expected 200, got " + response.status);
+    }
+    if (!response.body.includes("Тестовая статья HTTP Client")) {
+        throw new Error("Article title not found in response");
+    }
+    if (!response.body.includes("Hello")) {
+        throw new Error("Article text not rendered in response");
+    }
+    console.log("OK: article view verified");
+%}
+
+### ===========================================
+### 9. DELETE удаление статьи — 204 No Content
+### ===========================================
+DELETE http://localhost:8080/articles/{{contentId}}
+X-CSRF-TOKEN: {{csrf}}
+
+> {%
+    if (response.status !== 204) {
+        throw new Error("Delete failed: expected 204, got " + response.status);
+    }
+    console.log("OK: article deleted");
+%}
+
+### ===========================================
+### 10. GET несуществующая статья — проверка 404
+### ===========================================
+GET http://localhost:8080/articles/999999
+
+> {%
+    if (response.status !== 404) {
+        throw new Error("Expected 404 for non-existent article, got " + response.status);
+    }
+    console.log("OK: 404 for non-existent article");
+%}
+
+### ===========================================
+### 11. POST без CSRF — проверка 403 (запрос аутентифицирован через куку)
+### ===========================================
+POST http://localhost:8080/articles/drafts
+
+> {%
+    if (response.status !== 403) {
+        throw new Error("Expected 403 without CSRF, got " + response.status);
+    }
+    console.log("OK: 403 — CSRF protection works");
+%}
+
