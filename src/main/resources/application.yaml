@@ -94,7 +94,7 @@ app:
       await-termination-seconds: 30
 
   ai:
-    provider: openrouter
+    provider: deepseek
     content:
       max-summary-input-chars: 20000
       max-explain-input-chars: 12000
@@ -110,6 +110,15 @@ app:
       max-tokens: 700
       site-url: http://localhost:8080
       site-title: SDevPoint
+
+    deepseek:
+      base-url: https://api.deepseek.com
+      api-key: ${DEEPSEEK_API_KEY}
+      model: deepseek-v4-flash
+      connect-timeout: 5s
+      read-timeout: 60s
+      temperature: 0.7
+      max-tokens: 1000
 
     prompts:
       summary-system-prompt-path: prompts/summary-system.ftlh

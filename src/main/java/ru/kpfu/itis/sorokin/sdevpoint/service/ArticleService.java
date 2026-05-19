@@ -117,6 +117,9 @@ public class ArticleService {
 
         boolean reactionAllowed = contentItem.getContentStatus() == ContentStatus.PUBLISHED;
 
+        boolean isFavourite = userId != null
+                && favoriteRepository.findByUserIdAndContentItemId(userId, contentItemId).isPresent();
+
         return new ArticleView(
                 contentItem.getId(),
                 contentItem.getTitle(),
@@ -126,7 +129,8 @@ public class ArticleService {
                 contentViewService.formatDate(contentItem.getUpdatedAt()),
                 countViews,
                 reactionResponse,
-                reactionAllowed
+                reactionAllowed,
+                isFavourite
         );
     }
 

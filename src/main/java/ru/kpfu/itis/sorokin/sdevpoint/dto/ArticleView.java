@@ -9,5 +9,6 @@ public record ArticleView(
         String updatedAt,
         Long countViews,
         ReactionResponse reactionResponse,
-        boolean reactionsAllowed
+        boolean reactionsAllowed,
+        boolean isFavourite
 ) {}

@@ -30,6 +30,9 @@
             --warning: #b45309;
             --warning-bg: #fffbeb;
             --warning-border: #fde68a;
+            --favorite: #d97706;
+            --favorite-bg: #fffbeb;
+            --favorite-border: #fde68a;
         }
 
         * {
@@ -74,6 +77,13 @@
             border: 1px solid var(--warning-border);
         }
 
+        .page-message-success {
+            display: block;
+            color: var(--success);
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+        }
+
         .article {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -103,6 +113,58 @@
             gap: 10px 18px;
             color: var(--text-muted);
             font-size: 14px;
+        }
+
+        .article-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .article-action-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 38px;
+            padding: 8px 13px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            color: var(--text-main);
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .article-action-button:hover {
+            border-color: #cbd5e1;
+            background: #f9fafb;
+        }
+
+        .favorite-button {
+            border-color: var(--favorite-border);
+            background: #ffffff;
+            color: #4b5563;
+        }
+
+        .favorite-button:hover {
+            color: var(--favorite);
+            background: var(--favorite-bg);
+            border-color: var(--favorite-border);
+        }
+
+        .favorite-button.active {
+            color: var(--favorite);
+            background: var(--favorite-bg);
+            border-color: var(--favorite-border);
+            font-weight: 650;
+        }
+
+        .favorite-button:disabled {
+            cursor: default;
+            opacity: 0.65;
         }
 
         .article-meta span {
@@ -449,6 +511,24 @@
                 <span class="article-views">Просмотры: ${(article.countViews())!0}</span>
             </div>
 
+            <div class="article-actions">
+                <button
+                        id="favoriteButton"
+                        class="article-action-button favorite-button <#if article.isFavourite()>active</#if>"
+                        type="button"
+                        data-authenticated="${(isAuthenticated!false)?c}"
+                        data-favourite="${(article.isFavourite())?c}">
+                    <span id="favoriteIcon"><#if article.isFavourite()>★<#else>☆</#if></span>
+                    <span id="favoriteText">
+            <#if article.isFavourite()>
+                В избранном
+            <#else>
+                В избранное
+            </#if>
+        </span>
+                </button>
+            </div>
+
             <#if article.reactionsAllowed()>
                 <#assign reaction = article.reactionResponse()>
                 <#assign currentReaction = ((reaction.currentReaction())!'')?string>
@@ -517,6 +597,10 @@
     document.addEventListener("DOMContentLoaded", function () {
         const contentItemId = "${article.id()}";
 
+        const favoriteButton = document.getElementById("favoriteButton");
+        const favoriteIcon = document.getElementById("favoriteIcon");
+        const favoriteText = document.getElementById("favoriteText");
+
         const csrfHeaderName = <#if csrfHeaderName?has_content>"${csrfHeaderName?js_string}"<#else>null</#if>;
         const csrfToken = <#if csrfToken?has_content>"${csrfToken?js_string}"<#else>null</#if>;
 
@@ -569,6 +653,116 @@
                 pageMessage.textContent = "";
                 pageMessage.className = "page-message";
             }, 7000);
+        }
+
+        function initFavourite() {
+            if (!favoriteButton || !favoriteIcon || !favoriteText) {
+                return;
+            }
+
+            function isAuthenticated() {
+                return favoriteButton.dataset.authenticated === "true";
+            }
+
+            function isFavourite() {
+                return favoriteButton.dataset.favourite === "true";
+            }
+
+            function updateFavouriteView(favourite) {
+                favoriteButton.dataset.favourite = String(favourite);
+
+                if (favourite) {
+                    favoriteButton.classList.add("active");
+                    favoriteIcon.textContent = "★";
+                    favoriteText.textContent = "В избранном";
+                } else {
+                    favoriteButton.classList.remove("active");
+                    favoriteIcon.textContent = "☆";
+                    favoriteText.textContent = "В избранное";
+                }
+            }
+
+            async function readFavouriteState(response) {
+                const contentType = response.headers.get("content-type");
+
+                if (!contentType || !contentType.includes("application/json")) {
+                    return !isFavourite();
+                }
+
+                const body = await response.json();
+
+                if (typeof body.isFavourite === "boolean") {
+                    return body.isFavourite;
+                }
+
+                if (typeof body.favourite === "boolean") {
+                    return body.favourite;
+                }
+
+                if (typeof body.favorite === "boolean") {
+                    return body.favorite;
+                }
+
+                return !isFavourite();
+            }
+
+            favoriteButton.addEventListener("click", async function () {
+                if (!isAuthenticated()) {
+                    showPageMessage(
+                        "Чтобы добавить статью в избранное, нужно войти в аккаунт.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                favoriteButton.disabled = true;
+
+                try {
+                    const response = await fetch("/api/favorites/content/" + contentItemId, {
+                        method: "POST",
+                        headers: buildHeaders(false),
+                        credentials: "same-origin"
+                    });
+
+                    if (response.status === 401 || (response.redirected && response.url.includes("/auth/login"))) {
+                        showPageMessage(
+                            "Чтобы добавить статью в избранное, нужно войти в аккаунт.",
+                            "warning"
+                        );
+                        favoriteButton.disabled = false;
+                        return;
+                    }
+
+                    if (response.status === 403) {
+                        showPageMessage("Недостаточно прав для выполнения действия.", "error");
+                        favoriteButton.disabled = false;
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        showPageMessage("Не удалось обновить избранное.", "error");
+                        favoriteButton.disabled = false;
+                        return;
+                    }
+
+                    const favourite = await readFavouriteState(response);
+
+                    updateFavouriteView(favourite);
+
+                    showPageMessage(
+                        favourite
+                            ? "Статья добавлена в избранное."
+                            : "Статья удалена из избранного.",
+                        "success"
+                    );
+
+                    favoriteButton.disabled = false;
+                } catch (e) {
+                    console.error(e);
+                    showPageMessage("Не удалось обновить избранное.", "error");
+                    favoriteButton.disabled = false;
+                }
+            });
         }
 
         function showAiMessage(message, type) {
@@ -800,6 +994,8 @@
                 setAiLoading(false);
             }
         }
+
+        initFavourite();
 
         if (aiSummaryButton) {
             aiSummaryButton.addEventListener("click", sendAiSummaryRequest);

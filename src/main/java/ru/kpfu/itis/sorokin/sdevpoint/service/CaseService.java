@@ -134,6 +134,9 @@ public class CaseService {
 
         boolean reactionAllowed = contentItem.getContentStatus() == ContentStatus.PUBLISHED;
 
+        boolean isFavourite = userId != null
+                && favoriteRepository.findByUserIdAndContentItemId(userId, contentItem.getId()).isPresent();
+
         return new CaseView(
                 contentItem.getId(),
                 contentItem.getTitle(),
@@ -145,7 +148,8 @@ public class CaseService {
                 contentViewService.formatDate(contentItem.getUpdatedAt()),
                 countViews,
                 reactionResponse,
-                reactionAllowed
+                reactionAllowed,
+                isFavourite
         );
     }
 

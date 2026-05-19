@@ -1,17 +1,15 @@
-package ru.kpfu.itis.sorokin.sdevpoint.ai.client.openrouter;
+package ru.kpfu.itis.sorokin.sdevpoint.ai.client.deepseek;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.client.AiClient;
-import ru.kpfu.itis.sorokin.sdevpoint.ai.client.openrouter.dto.OpenRouterChatRequest;
-import ru.kpfu.itis.sorokin.sdevpoint.ai.client.openrouter.dto.OpenRouterChatResponse;
-import ru.kpfu.itis.sorokin.sdevpoint.ai.client.openrouter.dto.OpenRouterMessage;
-import ru.kpfu.itis.sorokin.sdevpoint.ai.client.openrouter.properties.AiOpenRouterProperties;
+import ru.kpfu.itis.sorokin.sdevpoint.ai.client.deepseek.dto.DeepSeekChatRequest;
+import ru.kpfu.itis.sorokin.sdevpoint.ai.client.deepseek.dto.DeepSeekChatResponse;
+import ru.kpfu.itis.sorokin.sdevpoint.ai.client.deepseek.dto.DeepSeekMessage;
+import ru.kpfu.itis.sorokin.sdevpoint.ai.client.deepseek.properties.AiDeepSeekProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.dto.AiCompletionRequest;
 import ru.kpfu.itis.sorokin.sdevpoint.ai.exception.AiProviderException;
 import tools.jackson.core.JacksonException;
@@ -22,8 +20,8 @@ import java.util.List;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "app.ai", name = "provider", havingValue = "openrouter")
-public class OpenRouterAiClient implements AiClient {
+@ConditionalOnProperty(prefix = "app.ai", name = "provider", havingValue = "deepseek")
+public class DeepSeekAiClient implements AiClient {
     private static final MediaType JSON_MEDIA_TYPE =
             MediaType.get("application/json; charset=utf-8");
 
@@ -31,12 +29,12 @@ public class OpenRouterAiClient implements AiClient {
 
     private final OkHttpClient okHttpClient;
     private final ObjectMapper objectMapper;
-    private final AiOpenRouterProperties properties;
+    private final AiDeepSeekProperties properties;
 
-    public OpenRouterAiClient(
-            @Qualifier("openRouterOkHttpClient") OkHttpClient okHttpClient,
+    public DeepSeekAiClient(
+            @Qualifier("deepSeekOkHttpClient") OkHttpClient okHttpClient,
             ObjectMapper objectMapper,
-            AiOpenRouterProperties properties
+            AiDeepSeekProperties properties
     ) {
         this.okHttpClient = okHttpClient;
         this.objectMapper = objectMapper;
@@ -45,17 +43,15 @@ public class OpenRouterAiClient implements AiClient {
 
     @Override
     public String complete(AiCompletionRequest request) {
-        OpenRouterChatRequest openRouterRequest = toOpenRouterRequest(request);
+        DeepSeekChatRequest deepSeekRequest = toDeepSeekRequest(request);
 
-        String requestJson = writeJson(openRouterRequest);
+        String requestJson = writeJson(deepSeekRequest);
 
         Request httpRequest = new Request.Builder()
                 .url(buildChatCompletionsUrl())
                 .post(RequestBody.create(requestJson, JSON_MEDIA_TYPE))
                 .header("Authorization", "Bearer " + properties.apiKey())
                 .header("Content-Type", "application/json")
-                .header("HTTP-Referer", properties.siteUrl())
-                .header("X-OpenRouter-Title", properties.siteTitle())
                 .build();
 
         try (Response response = okHttpClient.newCall(httpRequest).execute()) {
@@ -65,7 +61,7 @@ public class OpenRouterAiClient implements AiClient {
 
             if (!response.isSuccessful()) {
                 log.warn(
-                        "OpenRouter request failed, status={}, body={}",
+                        "DeepSeek request failed, status={}, body={}",
                         response.code(),
                         responseBody
                 );
@@ -75,16 +71,16 @@ public class OpenRouterAiClient implements AiClient {
 
             return extractContent(responseBody);
         } catch (IOException e) {
-            log.error("OpenRouter request IO error", e);
+            log.error("DeepSeek request IO error", e);
             throw new AiProviderException("Не удалось выполнить запрос к AI-сервису");
         }
     }
 
     private String extractContent(String responseBody) {
         try {
-            OpenRouterChatResponse response = objectMapper.readValue(
+            DeepSeekChatResponse response = objectMapper.readValue(
                     responseBody,
-                    OpenRouterChatResponse.class
+                    DeepSeekChatResponse.class
             );
 
             if (response.choices() == null || response.choices().isEmpty()) {
@@ -99,15 +95,15 @@ public class OpenRouterAiClient implements AiClient {
 
             return message.content().trim();
         } catch (JacksonException e) {
-            log.error("Cannot parse OpenRouter response, body={}", responseBody, e);
+            log.error("Cannot parse DeepSeek response, body={}", responseBody, e);
             throw new AiProviderException("Не удалось разобрать ответ AI-сервиса");
         }
     }
 
-    private OpenRouterChatRequest toOpenRouterRequest(AiCompletionRequest request) {
-        List<OpenRouterMessage> messages = request.messages()
+    private DeepSeekChatRequest toDeepSeekRequest(AiCompletionRequest request) {
+        List<DeepSeekMessage> messages = request.messages()
                 .stream()
-                .map(message -> new OpenRouterMessage(
+                .map(message -> new DeepSeekMessage(
                         message.role(),
                         message.content()
                 ))
@@ -121,7 +117,7 @@ public class OpenRouterAiClient implements AiClient {
                 ? request.temperature()
                 : properties.temperature();
 
-        return new OpenRouterChatRequest(
+        return new DeepSeekChatRequest(
                 properties.model(),
                 messages,
                 maxTokens,
@@ -129,7 +125,7 @@ public class OpenRouterAiClient implements AiClient {
         );
     }
 
-    private String writeJson(OpenRouterChatRequest request) {
+    private String writeJson(DeepSeekChatRequest request) {
         try {
             return objectMapper.writeValueAsString(request);
         } catch (JacksonException e) {

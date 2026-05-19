@@ -11,5 +11,6 @@ public record CaseView(
         String updatedAt,
         Long countViews,
         ReactionResponse reactionResponse,
-        boolean reactionsAllowed
+        boolean reactionsAllowed,
+        boolean isFavourite
 ) {}
