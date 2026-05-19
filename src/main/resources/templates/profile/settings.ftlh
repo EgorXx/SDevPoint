@@ -177,6 +177,8 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
+
 
 <main class="page-wrapper">
     <header class="page-header">
@@ -234,6 +236,8 @@
         </form>
     </section>
 </main>
+
+<#include "/fragments/footer.ftlh">
 
 </body>
 </html>

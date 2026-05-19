@@ -504,6 +504,7 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
 
 <main class="page">
     <div id="pageMessage" class="page-message"></div>
@@ -1035,6 +1036,8 @@
         aiExplainButton.addEventListener("click", sendAiExplainRequest);
     }
     </script>
+
+    <#include "/fragments/footer.ftlh">
 
     </body>
     </html>

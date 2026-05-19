@@ -206,6 +206,7 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
 
 <h1>Редактирование статьи</h1>
 
@@ -770,5 +771,6 @@
     });
 </script>
 
+<#include "/fragments/footer.ftlh">
 </body>
 </html>

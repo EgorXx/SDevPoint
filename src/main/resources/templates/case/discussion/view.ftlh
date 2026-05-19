@@ -399,6 +399,7 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
 
 <main class="page-wrapper">
     <div id="pageMessage" class="page-message"></div>
@@ -614,5 +615,6 @@
     });
 </script>
 
+<#include "/fragments/footer.ftlh">
 </body>
 </html>

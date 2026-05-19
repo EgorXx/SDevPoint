@@ -180,6 +180,7 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
 
 <main class="error-card">
     <div class="status-badge ${badgeClass}">

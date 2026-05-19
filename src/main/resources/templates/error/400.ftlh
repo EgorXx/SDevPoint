@@ -124,6 +124,7 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
 
 <main class="error-card">
     <div class="status-badge">Ошибка ${(status)!400}</div>

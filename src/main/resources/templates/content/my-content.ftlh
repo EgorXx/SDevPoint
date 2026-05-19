@@ -321,6 +321,42 @@
             justify-content: flex-end;
         }
 
+        .create-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .create-button {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 10px;
+            background: var(--link);
+            color: #ffffff;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+
+        .create-button:hover {
+            background: var(--link-hover);
+        }
+
+        .create-button-secondary {
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .create-button-secondary:hover {
+            background: #f3f4f6;
+        }
+
         @media (max-width: 700px) {
             .page-wrapper {
                 padding: 24px 14px 40px;
@@ -353,6 +389,7 @@
     </style>
 </head>
 <body>
+<#include "/fragments/header.ftlh">
 
 <main class="page-wrapper">
     <header class="page-header">
@@ -360,6 +397,22 @@
         <p class="page-description">
             Здесь отображаются ваши статьи и кейсы.
         </p>
+
+        <div class="create-actions">
+            <form method="post" action="/articles/drafts" style="display:inline;">
+                <#if _csrf??>
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                </#if>
+                <button type="submit" class="create-button">Создать статью</button>
+            </form>
+
+            <form method="post" action="/cases/drafts" style="display:inline;">
+                <#if _csrf??>
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                </#if>
+                <button type="submit" class="create-button create-button-secondary">Создать кейс</button>
+            </form>
+        </div>
     </header>
 
     <#if page.contents()?has_content>
@@ -772,5 +825,6 @@
     });
 </script>
 
+<#include "/fragments/footer.ftlh">
 </body>
 </html>
