@@ -11,5 +11,9 @@ public record UserForm(
 
         @NotBlank
         @Size(min = 4, max = 32)
-        String password
+        String password,
+
+        @NotBlank
+        @Size(min = 4, max = 32)
+        String confirmPassword
 ) {}

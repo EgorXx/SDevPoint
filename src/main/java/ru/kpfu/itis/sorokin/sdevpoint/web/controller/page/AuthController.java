@@ -77,6 +77,15 @@ public class AuthController {
             return "auth/register";
         }
 
+        if (!userForm.password().equals(userForm.confirmPassword())) {
+            bindingResult.rejectValue(
+                    "confirmPassword",
+                    "password.mismatch",
+                    "Пароли не совпадают"
+            );
+            return "auth/register";
+        }
+
         try {
             Long userId = userService.registerUser(userForm);
             httpSession.setAttribute("registerProcessUserId", userId);
@@ -93,7 +102,7 @@ public class AuthController {
 
     @GetMapping("/auth/register")
     public String registerPage(Model model) {
-        model.addAttribute("form", new UserForm("", ""));
+        model.addAttribute("form", new UserForm("", "", ""));
         return "auth/register";
     }
 

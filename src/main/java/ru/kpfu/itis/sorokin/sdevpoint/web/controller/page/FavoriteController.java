@@ -36,17 +36,4 @@ public class FavoriteController {
 
         return "favorite/view";
     }
-
-    @PostMapping("api/favorites/content/{contentId}")
-    public ResponseEntity<Void> toggleFavorite(
-            @PathVariable("contentId") Long contentId,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
-    ) {
-        favoriteService.toggle(
-                customUserDetails.getUserId(),
-                contentId
-        );
-
-        return ResponseEntity.ok().build();
-    }
 }

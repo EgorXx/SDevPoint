@@ -13,6 +13,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.dto.ContentRejectionCommentView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentRejectionComment;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentStatus;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
@@ -47,7 +48,7 @@ public class ContentService {
                 .map(contentItem -> new ContentCardView(
                         contentItem.getId(),
                         contentItem.getItemType().toString(),
-                        contentItem.getOwner().getUsername(),
+                        getOwner(userId, contentItem.getOwner()),
                         contentItem.getTitle(),
                         contentItem.getPreview(),
                         contentViewService.formatDate(contentItem.getCreatedAt()),
@@ -65,6 +66,10 @@ public class ContentService {
                 contentItems.hasPrevious(),
                 contentItems.hasNext()
         );
+    }
+
+    private String getOwner(Long userId, User owner) {
+        return owner.getId().equals(userId) ? "ВЫ" : owner.getUsername();
     }
 
     @Transactional

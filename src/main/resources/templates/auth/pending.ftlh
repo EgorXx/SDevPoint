@@ -6,203 +6,71 @@
     <#assign csrfHeaderName = "">
     <#assign csrfToken = "">
 </#if>
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Подтверждение почты</title>
+    <title>Подтверждение почты — SDevPoint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --bg: #f6f7f9;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --link: #2563eb;
-            --link-hover: #1d4ed8;
-            --success: #15803d;
-            --success-bg: #f0fdf4;
-            --success-border: #bbf7d0;
-            --warning: #b45309;
-            --warning-bg: #fffbeb;
-            --warning-border: #fde68a;
-            --danger: #dc2626;
-            --danger-bg: #fef2f2;
-            --danger-border: #fecaca;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        .page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 16px;
-        }
-
-        .card {
-            width: 100%;
-            max-width: 520px;
-            padding: 34px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-        }
-
-        .title {
-            margin: 0 0 12px;
-            font-size: 30px;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
-            color: #111827;
-        }
-
-        .description {
-            margin: 0 0 24px;
-            color: var(--text-muted);
-            font-size: 16px;
-            line-height: 1.55;
-        }
-
-        .notice {
-            display: none;
-            margin-bottom: 18px;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .notice-success {
-            display: block;
-            color: var(--success);
-            background: var(--success-bg);
-            border: 1px solid var(--success-border);
-        }
-
-        .notice-warning {
-            display: block;
-            color: var(--warning);
-            background: var(--warning-bg);
-            border: 1px solid var(--warning-border);
-        }
-
-        .notice-error {
-            display: block;
-            color: var(--danger);
-            background: var(--danger-bg);
-            border: 1px solid var(--danger-border);
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 42px;
-            padding: 10px 15px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: #ffffff;
-            color: var(--text-main);
-            text-decoration: none;
-            font: inherit;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .button-primary {
-            border: none;
-            background: var(--link);
-            color: #ffffff;
-        }
-
-        .button-primary:hover {
-            background: var(--link-hover);
-        }
-
-        .button-secondary:hover {
-            background: #f9fafb;
-            border-color: #cbd5e1;
-        }
-
-        .button:disabled {
-            cursor: default;
-            opacity: 0.6;
-        }
-
-        .hint {
-            margin-top: 18px;
-            color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 520px) {
-            .card {
-                padding: 26px 20px;
-            }
-
-            .title {
-                font-size: 26px;
-            }
-
-            .actions {
-                display: grid;
-            }
-
-            .button {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
 
-<main class="page">
-    <section class="card">
-        <h1 class="title">Подтвердите почту</h1>
+<body class="app-body auth-pending-page">
+<#include "/fragments/header.ftlh">
 
-        <p class="description">
-            Мы отправили письмо со ссылкой для подтверждения аккаунта.
-            Перейдите по ссылке из письма, после этого можно будет войти в систему.
-        </p>
+<main class="auth-login auth-pending">
+    <div class="auth-login__visual" aria-hidden="true">
+        <div class="auth-login__dots auth-login__dots--left"></div>
+        <div class="auth-login__dots auth-login__dots--right"></div>
+        <div class="auth-login__wave auth-login__wave--left"></div>
+        <div class="auth-login__wave auth-login__wave--right"></div>
+        <div class="auth-login__circle"></div>
+    </div>
 
-        <div id="notice" class="notice"></div>
+    <section class="auth-login__content auth-pending__content">
+        <header class="auth-login__header auth-pending__header">
+            <h1 class="auth-login__title">Подтверждение почты</h1>
 
-        <div class="actions">
-            <button id="resendButton" class="button button-primary" type="button">
-                Отправить письмо ещё раз
-            </button>
+            <p class="auth-login__description auth-pending__description">
+                Мы отправили письмо с подтверждением на вашу почту.<br>
+                Перейдите по ссылке в письме, чтобы активировать аккаунт.
+            </p>
+        </header>
 
-            <a class="button button-secondary" href="/auth/login">
-                Перейти ко входу
-            </a>
-        </div>
+        <section class="auth-login-card auth-pending-card">
+            <div class="auth-pending-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 6.75C4 5.78 4.78 5 5.75 5H18.25C19.22 5 20 5.78 20 6.75V17.25C20 18.22 19.22 19 18.25 19H5.75C4.78 19 4 18.22 4 17.25V6.75Z"
+                          stroke="currentColor"
+                          stroke-width="1.9"
+                          stroke-linejoin="round"/>
+                    <path d="M5 7L12 12.4L19 7"
+                          stroke="currentColor"
+                          stroke-width="1.9"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+            </div>
 
-        <p class="hint">
-            Если письмо не пришло, проверьте папку “Спам”. Повторную отправку лучше не нажимать слишком часто:
-            на сервере есть ограничение по количеству запросов.
-        </p>
+            <p class="auth-pending-card__text">
+                Если письмо не пришло, проверьте папку Спам<br>
+                или отправьте его повторно.
+            </p>
+
+            <div id="notice" class="auth-pending-notice"></div>
+
+            <div class="auth-pending-actions">
+                <button id="resendButton" class="auth-login-submit auth-pending-submit" type="button">
+                    Отправить письмо еще раз
+                </button>
+
+                <a class="auth-pending-login-link" href="/auth/login">
+                    Перейти ко входу
+                </a>
+            </div>
+        </section>
     </section>
 </main>
 
@@ -215,7 +83,7 @@
 
     function showNotice(message, type) {
         notice.textContent = message;
-        notice.className = "notice notice-" + type;
+        notice.className = "auth-pending-notice auth-pending-notice--" + type;
     }
 
     function buildHeaders() {
@@ -272,12 +140,13 @@
             showNotice("Не удалось отправить письмо повторно.", "error");
         } finally {
             resendButton.disabled = false;
-            resendButton.textContent = "Отправить письмо ещё раз";
+            resendButton.textContent = "Отправить письмо еще раз";
         }
     }
 
     resendButton.addEventListener("click", resendEmail);
 </script>
 
+<#include "/fragments/footer.ftlh">
 </body>
 </html>

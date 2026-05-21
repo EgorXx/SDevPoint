@@ -1,194 +1,154 @@
 <#-- templates/auth/confirm-result.ftlh -->
+<#assign confirmStatus = result.status()?lower_case>
 
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>${result.title()}</title>
+    <title>${result.title()} — SDevPoint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --bg: #f6f7f9;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --link: #2563eb;
-            --link-hover: #1d4ed8;
-            --success: #15803d;
-            --success-bg: #f0fdf4;
-            --success-border: #bbf7d0;
-            --warning: #b45309;
-            --warning-bg: #fffbeb;
-            --warning-border: #fde68a;
-            --error: #dc2626;
-            --error-bg: #fef2f2;
-            --error-border: #fecaca;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        .page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 16px;
-        }
-
-        .card {
-            width: 100%;
-            max-width: 520px;
-            padding: 34px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-        }
-
-        .title {
-            margin: 0 0 12px;
-            font-size: 30px;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
-            color: #111827;
-        }
-
-        .message {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 16px;
-            line-height: 1.55;
-        }
-
-        .status-box {
-            margin-top: 22px;
-            padding: 14px 16px;
-            border-radius: 12px;
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .status-success {
-            color: var(--success);
-            background: var(--success-bg);
-            border: 1px solid var(--success-border);
-        }
-
-        .status-warning {
-            color: var(--warning);
-            background: var(--warning-bg);
-            border: 1px solid var(--warning-border);
-        }
-
-        .status-error {
-            color: var(--error);
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 24px;
-        }
-
-        .button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 42px;
-            padding: 10px 15px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: #ffffff;
-            color: var(--text-main);
-            text-decoration: none;
-            font: inherit;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .button-primary {
-            border: none;
-            background: var(--link);
-            color: #ffffff;
-        }
-
-        .button-primary:hover {
-            background: var(--link-hover);
-        }
-
-        .button-secondary:hover {
-            background: #f9fafb;
-            border-color: #cbd5e1;
-        }
-
-        .redirect-hint {
-            margin-top: 16px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        @media (max-width: 520px) {
-            .card {
-                padding: 26px 20px;
-            }
-
-            .title {
-                font-size: 26px;
-            }
-
-            .actions {
-                display: grid;
-            }
-
-            .button {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
 
-<main class="page">
-    <section class="card">
-        <h1 class="title">${result.title()}</h1>
+<body class="app-body auth-confirm-result-page auth-confirm-result-page--${confirmStatus}">
+<#include "/fragments/header.ftlh">
 
-        <div class="status-box status-${result.status()}">
-            ${result.message()}
+<main class="auth-login auth-confirm-result">
+    <div class="auth-login__visual" aria-hidden="true">
+        <div class="auth-login__dots auth-login__dots--left"></div>
+        <div class="auth-login__dots auth-login__dots--right"></div>
+        <div class="auth-login__wave auth-login__wave--left"></div>
+        <div class="auth-login__wave auth-login__wave--right"></div>
+        <div class="auth-login__circle"></div>
+    </div>
+
+    <section class="auth-confirm-result-card">
+        <div class="auth-confirm-result-card__icon auth-confirm-result-card__icon--${confirmStatus}" aria-hidden="true">
+            <#if confirmStatus == "success">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8.5"
+                            stroke="currentColor"
+                            stroke-width="1.9"/>
+                    <path d="M8.2 12.1L10.7 14.6L15.9 9.4"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+            <#elseif confirmStatus == "warning">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 4.2L20.2 18.4C20.55 19 20.12 19.75 19.42 19.75H4.58C3.88 19.75 3.45 19 3.8 18.4L12 4.2Z"
+                          stroke="currentColor"
+                          stroke-width="1.9"
+                          stroke-linejoin="round"/>
+                    <path d="M12 9V13"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"/>
+                    <path d="M12 16.6V16.7"
+                          stroke="currentColor"
+                          stroke-width="2.5"
+                          stroke-linecap="round"/>
+                </svg>
+            <#else>
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8.5"
+                            stroke="currentColor"
+                            stroke-width="1.9"/>
+                    <path d="M9 9L15 15"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"/>
+                    <path d="M15 9L9 15"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"/>
+                </svg>
+            </#if>
         </div>
 
-        <div class="actions">
+        <header class="auth-confirm-result-card__header">
+            <h1 class="auth-confirm-result-card__title">${result.title()}</h1>
+
+            <p class="auth-confirm-result-card__description">
+                Здесь отображается результат подтверждения вашей почты.
+            </p>
+        </header>
+
+        <div class="auth-confirm-result-message auth-confirm-result-message--${confirmStatus}">
+            <span class="auth-confirm-result-message__icon" aria-hidden="true">
+                <#if confirmStatus == "success">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8"
+                                stroke="currentColor"
+                                stroke-width="1.8"/>
+                        <path d="M8.5 12.1L10.8 14.4L15.5 9.7"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                <#elseif confirmStatus == "warning">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 4.5L20 18.5H4L12 4.5Z"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linejoin="round"/>
+                        <path d="M12 9.5V13"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"/>
+                        <path d="M12 16.2V16.3"
+                              stroke="currentColor"
+                              stroke-width="2.4"
+                              stroke-linecap="round"/>
+                    </svg>
+                <#else>
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8"
+                                stroke="currentColor"
+                                stroke-width="1.8"/>
+                        <path d="M9.2 9.2L14.8 14.8"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"/>
+                        <path d="M14.8 9.2L9.2 14.8"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"/>
+                    </svg>
+                </#if>
+            </span>
+
+            <span class="auth-confirm-result-message__text">
+                ${result.message()}
+            </span>
+        </div>
+
+        <div class="auth-confirm-result-actions">
             <#if result.showLoginButton()>
-                <a class="button button-primary" href="/auth/login">
+                <a class="auth-login-submit auth-confirm-result-primary-link" href="/auth/login">
                     Перейти ко входу
                 </a>
             <#else>
-                <a class="button button-primary" href="/auth/register">
+                <a class="auth-login-submit auth-confirm-result-primary-link" href="/auth/register">
                     Зарегистрироваться
                 </a>
 
-                <a class="button button-secondary" href="/auth/login">
+                <a class="auth-confirm-result-secondary-link" href="/auth/login">
                     Перейти ко входу
                 </a>
             </#if>
         </div>
 
         <#if result.showLoginButton()>
-            <p class="redirect-hint">
+            <p class="auth-confirm-result-hint">
                 Через несколько секунд вы будете перенаправлены на страницу входа.
+            </p>
+        <#else>
+            <p class="auth-confirm-result-hint">
+                Если у вас возникли вопросы, свяжитесь с нашей поддержкой.
             </p>
         </#if>
     </section>
@@ -202,5 +162,6 @@
     </script>
 </#if>
 
+<#include "/fragments/footer.ftlh">
 </body>
 </html>

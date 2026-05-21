@@ -1,3 +1,4 @@
+<#-- templates/profile/settings.ftlh -->
 <#import "/spring.ftl" as spring>
 
 <!DOCTYPE html>
@@ -5,239 +6,99 @@
 <head>
     <meta charset="UTF-8">
     <title>Настройки профиля</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --bg: #f6f7f9;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --link: #2563eb;
-            --link-hover: #1d4ed8;
-            --danger: #dc2626;
-            --success: #15803d;
-            --success-bg: #f0fdf4;
-            --success-border: #bbf7d0;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        .page-wrapper {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: 40px 20px 64px;
-        }
-
-        .page-header {
-            margin-bottom: 28px;
-        }
-
-        .page-title {
-            margin: 0 0 8px;
-            font-size: 36px;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
-            color: #111827;
-        }
-
-        .page-description {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        .settings-card {
-            padding: 28px 32px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-        }
-
-        .section-title {
-            margin: 0 0 18px;
-            font-size: 24px;
-            line-height: 1.3;
-            color: #111827;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 15px;
-            font-weight: 650;
-            color: #111827;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 11px 13px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #ffffff;
-            color: var(--text-main);
-            font: inherit;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
-        }
-
-        .field-error {
-            margin-top: 8px;
-            color: var(--danger);
-            font-size: 14px;
-        }
-
-        .field-error p {
-            margin: 4px 0;
-        }
-
-        .success-message {
-            margin-bottom: 18px;
-            padding: 12px 14px;
-            border: 1px solid var(--success-border);
-            border-radius: 12px;
-            background: var(--success-bg);
-            color: var(--success);
-            font-size: 15px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 22px;
-        }
-
-        .submit-button {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 10px;
-            background: var(--link);
-            color: #ffffff;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .submit-button:hover {
-            background: var(--link-hover);
-        }
-
-        .back-link {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 15px;
-        }
-
-        .back-link:hover {
-            color: var(--link-hover);
-            text-decoration: underline;
-        }
-
-        @media (max-width: 700px) {
-            .page-wrapper {
-                padding: 24px 14px 40px;
-            }
-
-            .page-title {
-                font-size: 30px;
-            }
-
-            .settings-card {
-                padding: 22px 20px;
-            }
-
-            .actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .submit-button {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+
+<body class="app-body profile-settings-page">
 <#include "/fragments/header.ftlh">
 
+<main class="profile-settings">
+    <div class="profile-settings__container">
+        <header class="profile-settings__header">
+            <h1 class="profile-settings__title">Настройки профиля</h1>
+            <p class="profile-settings__description">
+                Изменение основных данных пользователя
+            </p>
+        </header>
 
-<main class="page-wrapper">
-    <header class="page-header">
-        <h1 class="page-title">Настройки профиля</h1>
-        <p class="page-description">
-            Здесь можно изменить данные профиля.
-        </p>
-    </header>
+        <#if success?? && success?has_content>
+            <div class="profile-settings-message profile-settings-message--success success-message">
+                ${success}
+            </div>
+        </#if>
 
-    <#if success?? && success?has_content>
-        <div class="success-message">
-            ${success}
-        </div>
-    </#if>
+        <section class="profile-settings-card settings-card">
+            <div class="profile-settings-card__visual" aria-hidden="true">
+                <div class="profile-settings-card__dots"></div>
+                <div class="profile-settings-card__wave"></div>
+                <div class="profile-settings-card__wave-secondary"></div>
+            </div>
 
-    <section class="settings-card">
-        <h2 class="section-title">Имя пользователя</h2>
+            <div class="profile-settings-card__content">
+                <h2 class="profile-settings-section-title section-title">
+                    Имя пользователя
+                </h2>
 
-        <form method="post" action="/profile/settings/name">
-            <#if _csrf??>
-                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-            </#if>
+                <form method="post" action="/profile/settings/name">
+                    <#if _csrf??>
+                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                    </#if>
 
-            <div class="form-group">
-                <label class="form-label" for="username">Имя</label>
+                    <div class="profile-settings-field form-group">
+                        <label class="profile-settings-label form-label" for="username">
+                            Новое имя
+                        </label>
 
-                <input
-                        class="form-input"
-                        id="username"
-                        type="text"
-                        name="username"
-                        value="${(nameForm.username())!''}"
-                        autocomplete="username"
-                >
+                        <input
+                                class="profile-settings-input form-input"
+                                id="username"
+                                type="text"
+                                name="username"
+                                value="${(nameForm.username())!''}"
+                                autocomplete="username"
+                                placeholder="Введите новое имя"
+                        >
 
-                <@spring.bind "nameForm.username"/>
-                <#if spring.status.error>
-                    <div class="field-error">
-                        <#list spring.status.errorMessages as error>
-                            <p>${error}</p>
-                        </#list>
+                        <@spring.bind "nameForm.username"/>
+                        <#if spring.status.error>
+                            <div class="profile-settings-field-error field-error">
+                                <#list spring.status.errorMessages as error>
+                                    <p>${error}</p>
+                                </#list>
+                            </div>
+                        </#if>
                     </div>
-                </#if>
-            </div>
 
-            <div class="actions">
-                <button class="submit-button" type="submit">
-                    Сохранить изменения
-                </button>
+                    <div class="profile-settings-actions actions">
+                        <button class="profile-settings-button profile-settings-button--primary submit-button" type="submit">
+                            Сохранить
+                        </button>
 
-                <a class="back-link" href="/profile">
-                    Вернуться в профиль
-                </a>
+                        <a class="profile-settings-button profile-settings-button--secondary back-link" href="/profile">
+                            <span class="profile-settings-button__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M15 6L9 12L15 18"
+                                          stroke="currentColor"
+                                          stroke-width="1.9"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                    <path d="M10 12H21"
+                                          stroke="currentColor"
+                                          stroke-width="1.9"
+                                          stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <span>Назад в профиль</span>
+                        </a>
+                    </div>
+                </form>
             </div>
-        </form>
-    </section>
+        </section>
+    </div>
 </main>
 
 <#include "/fragments/footer.ftlh">
-
 </body>
 </html>

@@ -1,9 +1,18 @@
 <#-- templates/header.ftlh — общий header для всех страниц -->
 <header class="site-header">
     <div class="header-inner">
-        <a href="/" class="header-logo">SDevPoint</a>
+        <a href="/" class="header-logo" aria-label="SDevPoint — главная">
+            <span class="header-logo__mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                    <path d="M11.6 11.2L7.2 16L11.6 20.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M20.4 11.2L24.8 16L20.4 20.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17.8 9.6L14.2 22.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="header-logo__text">SDevPoint</span>
+        </a>
 
-        <nav class="header-nav">
+        <nav class="header-nav" aria-label="Основная навигация">
             <a href="/articles/public" class="header-link">Статьи</a>
             <a href="/cases/public" class="header-link">Кейсы</a>
 
@@ -18,105 +27,8 @@
                     <button type="submit" class="header-link header-logout-button">Выйти</button>
                 </form>
             <#else>
-                <a href="/auth/login" class="header-link">Войти</a>
+                <a href="/auth/login" class="header-link header-link--button">Войти</a>
             </#if>
         </nav>
     </div>
 </header>
-
-<style>
-    .site-header {
-        background: #ffffff;
-        border-bottom: 1px solid #e5e7eb;
-        padding: 0;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
-
-    .header-inner {
-        max-width: 1100px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 12px 20px;
-    }
-
-    .header-logo {
-        font-size: 22px;
-        font-weight: 750;
-        color: #111827;
-        text-decoration: none;
-        letter-spacing: -0.03em;
-        white-space: nowrap;
-    }
-
-    .header-logo:hover {
-        color: #2563eb;
-    }
-
-    .header-nav {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .header-link {
-        color: #4b5563;
-        text-decoration: none;
-        font-size: 15px;
-        font-weight: 500;
-        padding: 8px 12px;
-        border-radius: 8px;
-        transition: color 0.12s, background 0.12s;
-        white-space: nowrap;
-    }
-
-    .header-link:hover {
-        color: #111827;
-        background: #f3f4f6;
-    }
-
-    .header-logout-form {
-        display: inline-flex;
-        margin: 0;
-    }
-
-    .header-logout-button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        font: inherit;
-        font-size: 15px;
-        font-weight: 500;
-        color: #9ca3af;
-        padding: 8px 12px;
-        border-radius: 8px;
-        transition: color 0.12s, background 0.12s;
-    }
-
-    .header-logout-button:hover {
-        color: #dc2626;
-        background: #fef2f2;
-    }
-
-    @media (max-width: 640px) {
-        .header-inner {
-            flex-direction: column;
-            gap: 10px;
-            padding: 10px 14px;
-        }
-
-        .header-nav {
-            justify-content: center;
-        }
-
-        .header-link {
-            font-size: 14px;
-            padding: 6px 10px;
-        }
-    }
-</style>

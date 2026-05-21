@@ -1,144 +1,82 @@
 <#-- templates/error/403.ftlh -->
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Доступ запрещён</title>
+    <title>${title!"Доступ запрещён"} — SDevPoint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --bg: #f6f7f9;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --link: #2563eb;
-            --link-hover: #1d4ed8;
-            --danger-bg: #fef2f2;
-            --danger-border: #fecaca;
-            --danger-text: #b91c1c;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        .error-card {
-            width: 100%;
-            max-width: 600px;
-            padding: 34px 38px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 16px;
-            padding: 5px 11px;
-            border-radius: 999px;
-            background: var(--danger-bg);
-            border: 1px solid var(--danger-border);
-            color: var(--danger-text);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        h1 {
-            margin: 0 0 12px;
-            color: #111827;
-            font-size: 32px;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
-        }
-
-        p {
-            margin: 0 0 24px;
-            color: var(--text-muted);
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .action-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 40px;
-            padding: 9px 14px;
-            border-radius: 10px;
-            border: 1px solid #bfdbfe;
-            background: #eff6ff;
-            color: var(--link);
-            text-decoration: none;
-            font-size: 15px;
-        }
-
-        .action-link:hover {
-            color: var(--link-hover);
-            border-color: #93c5fd;
-            background: #dbeafe;
-        }
-
-        .secondary-link {
-            border-color: var(--border);
-            background: #ffffff;
-            color: var(--text-main);
-        }
-
-        .secondary-link:hover {
-            border-color: #cbd5e1;
-            background: #f9fafb;
-            color: var(--text-main);
-        }
-
-        @media (max-width: 640px) {
-            .error-card {
-                padding: 28px 22px;
-            }
-
-            h1 {
-                font-size: 27px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+
+<body class="app-body error-page error-403-page">
 <#include "/fragments/header.ftlh">
 
-<main class="error-card">
-    <div class="status-badge">Ошибка ${(status)!403}</div>
-
-    <h1>${title!"Доступ запрещён"}</h1>
-
-    <p>
-        ${message!"У вас нет прав для просмотра этой страницы или выполнения этого действия."}
-    </p>
-
-    <div class="actions">
-        <a class="action-link" href="/">На главную</a>
-        <a class="action-link secondary-link" href="javascript:history.back()">Назад</a>
+<main class="error-page-main">
+    <div class="error-page-visual" aria-hidden="true">
+        <div class="error-page-visual__dots error-page-visual__dots--left"></div>
+        <div class="error-page-visual__dots error-page-visual__dots--right"></div>
+        <div class="error-page-visual__wave error-page-visual__wave--top"></div>
+        <div class="error-page-visual__wave error-page-visual__wave--bottom"></div>
+        <div class="error-page-visual__circle error-page-visual__circle--top"></div>
+        <div class="error-page-visual__circle error-page-visual__circle--bottom"></div>
     </div>
+
+    <section class="error-page-content">
+        <div class="error-page-code">
+            ${(status)!403}
+        </div>
+
+        <h1 class="error-page-title">
+            ${title!"Доступ запрещён"}
+        </h1>
+
+        <p class="error-page-description">
+            ${message!"У вас нет прав для просмотра этой страницы или выполнения этого действия."}
+        </p>
+
+        <div class="error-page-actions">
+            <a class="error-page-button error-page-button--primary" href="/">
+                <span class="error-page-button__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 10.8L12 4L20 10.8"
+                              stroke="currentColor"
+                              stroke-width="1.9"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M6.5 10.5V19H17.5V10.5"
+                              stroke="currentColor"
+                              stroke-width="1.9"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M10 19V14H14V19"
+                              stroke="currentColor"
+                              stroke-width="1.9"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span>На главную</span>
+            </a>
+
+            <a class="error-page-button error-page-button--secondary" href="javascript:history.back()">
+                <span class="error-page-button__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M15 6L9 12L15 18"
+                              stroke="currentColor"
+                              stroke-width="1.9"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M10 12H21"
+                              stroke="currentColor"
+                              stroke-width="1.9"
+                              stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span>Назад</span>
+            </a>
+        </div>
+    </section>
 </main>
 
 </body>

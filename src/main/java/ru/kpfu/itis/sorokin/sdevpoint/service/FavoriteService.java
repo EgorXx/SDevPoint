@@ -37,7 +37,9 @@ public class FavoriteService {
 
         Page<Favorite> favorites = favoriteRepository.findByUserId(currentUserId, pageable);
 
-        List<PublishedContentCardView> publishedContentCardViews = favorites.map(
+        List<PublishedContentCardView> publishedContentCardViews = favorites.stream()
+                .filter(f -> checkAccess(f.getContentItem(), currentUserId))
+                .map(
                 favorite -> new PublishedContentCardView(
                         favorite.getContentItem().getId(),
                         favorite.getContentItem().getItemType().toString(),
@@ -84,9 +86,21 @@ public class FavoriteService {
         }
     }
 
+    private boolean checkAccess(ContentItem contentItem, Long userId) {
+        if (contentItem.getContentStatus() != ContentStatus.PUBLISHED) {
+            return false;
+        }
+
+        if (contentItem.getVisibility() == Visibility.PRIVATE && !isOwner(contentItem, userId)) {
+            return false;
+        }
+
+        return true;
+    }
+
     private void checkCanAddToFavorite(ContentItem contentItem, Long userId) {
         if (contentItem.getContentStatus() != ContentStatus.PUBLISHED) {
-            throw new NotFoundException("Контент не найден");
+            throw new NotFoundException("Невозможно добавить неопубликованный контент в избранное");
         }
 
         if (contentItem.getVisibility() == Visibility.PRIVATE && !isOwner(contentItem, userId)) {

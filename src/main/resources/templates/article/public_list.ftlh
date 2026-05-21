@@ -3,404 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <title>Публичные статьи</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --bg: #f6f7f9;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --link: #2563eb;
-            --link-hover: #1d4ed8;
-            --star: #f59e0b;
-            --star-bg: #fffbeb;
-            --star-border: #fde68a;
-        }
+    <#if _csrf??>
+        <meta name="csrf-header" content="${_csrf.headerName}">
+        <meta name="csrf-token" content="${_csrf.token}">
+    </#if>
 
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        .page-wrapper {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 40px 20px 64px;
-        }
-
-        .page-header {
-            margin-bottom: 32px;
-        }
-
-        .page-title {
-            margin: 0 0 8px;
-            font-size: 36px;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
-        }
-
-        .page-description {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-
-        .page-error {
-            display: none;
-            margin-bottom: 18px;
-            padding: 12px 14px;
-            border: 1px solid #fecaca;
-            border-radius: 10px;
-            background: #fef2f2;
-            color: #991b1b;
-            font-size: 15px;
-        }
-
-        .articles {
-            display: grid;
-            gap: 18px;
-        }
-
-        .article-card {
-            position: relative;
-            display: block;
-            padding: 24px 72px 24px 28px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-            color: inherit;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-        }
-
-        .article-card:hover {
-            transform: translateY(-2px);
-            border-color: #cbd5e1;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-        }
-
-        .article-card-link {
-            display: block;
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .favorite-button {
-            position: absolute;
-            top: 22px;
-            right: 24px;
-            width: 42px;
-            height: 42px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: #ffffff;
-            color: #9ca3af;
-            font-size: 24px;
-            line-height: 1;
-            cursor: pointer;
-            transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-        }
-
-        .favorite-button.active {
-            background: var(--star-bg);
-            color: var(--star);
-            border-color: var(--star-border);
-        }
-
-        .favorite-button:hover {
-            transform: scale(1.06);
-        }
-
-        .favorite-button:disabled {
-            cursor: default;
-            opacity: 0.6;
-            transform: none;
-        }
-
-        .article-title {
-            margin: 0 0 10px;
-            font-size: 24px;
-            line-height: 1.3;
-            color: #111827;
-        }
-
-        .article-preview {
-            margin: 0 0 18px;
-            color: #374151;
-            line-height: 1.6;
-            font-size: 16px;
-        }
-
-        .article-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px 18px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .empty-state {
-            padding: 32px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-top: 34px;
-        }
-
-        .pagination a,
-        .pagination span {
-            min-width: 38px;
-            padding: 9px 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--card-bg);
-            color: var(--text-main);
-            text-align: center;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .pagination a:hover {
-            color: var(--link-hover);
-            border-color: #bfdbfe;
-            background: #eff6ff;
-        }
-
-        .pagination .active {
-            color: #ffffff;
-            border-color: var(--link);
-            background: var(--link);
-        }
-
-        .pagination .disabled {
-            color: #9ca3af;
-            background: #f3f4f6;
-        }
-
-        .pagination-info {
-            margin-top: 14px;
-            color: var(--text-muted);
-            text-align: center;
-            font-size: 14px;
-        }
-
-        @media (max-width: 700px) {
-            .page-wrapper {
-                padding: 24px 14px 40px;
-            }
-
-            .page-title {
-                font-size: 30px;
-            }
-
-            .article-card {
-                padding: 20px 64px 20px 20px;
-            }
-
-            .favorite-button {
-                top: 18px;
-                right: 18px;
-            }
-
-            .article-title {
-                font-size: 21px;
-            }
-
-            .pagination {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/articles-public.js" defer></script>
 </head>
 
-<body>
+<body class="app-body articles-public-page">
 <#include "/fragments/header.ftlh">
 
-<main class="page-wrapper">
-    <header class="page-header">
-        <h1 class="page-title">Публичные статьи</h1>
-        <p class="page-description">
-            Список опубликованных статей пользователей.
-        </p>
-    </header>
+<main class="articles-page">
+    <section class="articles-hero">
+        <div class="articles-hero__content">
+            <h1 class="articles-hero__title">Статьи</h1>
+            <p class="articles-hero__description">
+                Подборка технических статей и заметок сообщества.
+            </p>
+        </div>
 
-    <div id="pageError" class="page-error"></div>
+        <div class="articles-hero__visual" aria-hidden="true">
+            <div class="articles-visual articles-visual--dots"></div>
+            <div class="articles-visual articles-visual--wave"></div>
+            <div class="articles-visual articles-visual--wave-secondary"></div>
+        </div>
+    </section>
 
-    <#if page.articles()?has_content>
-        <section class="articles">
-            <#list page.articles() as article>
-                <article class="article-card" id="article-card-${article.contentItemId()}">
-                    <button
-                            class="favorite-button <#if article.favorite()>active</#if>"
-                            type="button"
-                            data-content-id="${article.contentItemId()}"
-                            title="<#if article.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>"
-                            aria-label="<#if article.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>">
-                        <#if article.favorite()>★<#else>☆</#if>
-                    </button>
+    <section class="articles-content">
+        <div id="pageError" class="page-error"></div>
 
-                    <a class="article-card-link" href="/articles/${article.contentItemId()}">
-                        <h2 class="article-title">${article.title()}</h2>
+        <#if page.articles()?has_content>
+            <section class="articles-grid" aria-label="Список статей">
+                <#list page.articles() as article>
+                    <article class="article-card" id="article-card-${article.contentItemId()}">
+                        <a class="article-card-link" href="/articles/${article.contentItemId()}">
+                            <div class="article-card__meta">
+                                <span>Автор: ${article.owner()}</span>
+                            </div>
 
-                        <#if article.preview()?has_content>
-                            <p class="article-preview">${article.preview()}</p>
-                        <#else>
-                            <p class="article-preview">У статьи пока нет описания.</p>
-                        </#if>
+                            <h2 class="article-card__title">${article.title()}</h2>
 
-                        <div class="article-meta">
-                            <span>Автор: ${article.owner()}</span>
-                            <span>Создано: ${article.createdAt()}</span>
-                        </div>
-                    </a>
-                </article>
-            </#list>
-        </section>
+                            <#if article.preview()?has_content>
+                                <p class="article-card__preview">${article.preview()}</p>
+                            <#else>
+                                <p class="article-card__preview">У статьи пока нет описания.</p>
+                            </#if>
 
-        <#if page.totalPages() gt 1>
-            <nav class="pagination">
-                <#if page.hasPrevious()>
-                    <a href="/articles/public?page=${page.currentPage() - 1}&size=${page.size()}">Назад</a>
-                <#else>
-                    <span class="disabled">Назад</span>
-                </#if>
+                            <div class="article-card__date">
+                                ${article.createdAt()}
+                            </div>
+                        </a>
 
-                <#list 0..(page.totalPages() - 1) as pageNumber>
-                    <#if pageNumber == page.currentPage()>
-                        <span class="active">${pageNumber + 1}</span>
-                    <#else>
-                        <a href="/articles/public?page=${pageNumber}&size=${page.size()}">${pageNumber + 1}</a>
-                    </#if>
+                        <button
+                                class="favorite-button <#if article.favorite()>active</#if>"
+                                type="button"
+                                data-content-id="${article.contentItemId()}"
+                                title="<#if article.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>"
+                                aria-label="<#if article.favorite()>Убрать из избранного<#else>Добавить в избранное</#if>">
+                            <span class="favorite-button__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 20.6L10.55 19.28C5.4 14.6 2 11.52 2 7.75C2 4.67 4.42 2.25 7.5 2.25C9.24 2.25 10.91 3.06 12 4.34C13.09 3.06 14.76 2.25 16.5 2.25C19.58 2.25 22 4.67 22 7.75C22 11.52 18.6 14.6 13.45 19.29L12 20.6Z"
+                                          stroke="currentColor"
+                                          stroke-width="1.9"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        </button>
+                    </article>
                 </#list>
+            </section>
 
-                <#if page.hasNext()>
-                    <a href="/articles/public?page=${page.currentPage() + 1}&size=${page.size()}">Вперёд</a>
-                <#else>
-                    <span class="disabled">Вперёд</span>
-                </#if>
-            </nav>
+            <#if page.totalPages() gt 1>
+                <nav class="pagination" aria-label="Пагинация статей">
+                    <#if page.hasPrevious()>
+                        <a href="/articles/public?page=${page.currentPage() - 1}&size=${page.size()}">Назад</a>
+                    <#else>
+                        <span class="disabled">Назад</span>
+                    </#if>
+
+                    <#list 0..(page.totalPages() - 1) as pageNumber>
+                        <#if pageNumber == page.currentPage()>
+                            <span class="active">${pageNumber + 1}</span>
+                        <#else>
+                            <a href="/articles/public?page=${pageNumber}&size=${page.size()}">${pageNumber + 1}</a>
+                        </#if>
+                    </#list>
+
+                    <#if page.hasNext()>
+                        <a href="/articles/public?page=${page.currentPage() + 1}&size=${page.size()}">Вперёд</a>
+                    <#else>
+                        <span class="disabled">Вперёд</span>
+                    </#if>
+                </nav>
+            </#if>
+
+            <div class="pagination-info">
+                Страница ${page.currentPage() + 1} из ${page.totalPages()},
+                всего статей: ${page.totalElements()}
+            </div>
+        <#else>
+            <div class="empty-state">
+                Пока нет опубликованных статей.
+            </div>
         </#if>
-
-        <div class="pagination-info">
-            Страница ${page.currentPage() + 1} из ${page.totalPages()},
-            всего статей: ${page.totalElements()}
-        </div>
-    <#else>
-        <div class="empty-state">
-            Пока нет опубликованных статей.
-        </div>
-    </#if>
+    </section>
 </main>
-
-<script>
-    <#if _csrf??>
-    const csrfHeaderName = "${_csrf.headerName?js_string}";
-    const csrfToken = "${_csrf.token?js_string}";
-    <#else>
-    const csrfHeaderName = null;
-    const csrfToken = null;
-    </#if>
-
-    function showPageError(message) {
-        const errorBlock = document.getElementById("pageError");
-
-        if (!errorBlock) {
-            return;
-        }
-
-        errorBlock.textContent = message;
-        errorBlock.style.display = "block";
-
-        setTimeout(function () {
-            errorBlock.style.display = "none";
-            errorBlock.textContent = "";
-        }, 7000);
-    }
-
-    document.addEventListener("click", async function (event) {
-        const button = event.target.closest(".favorite-button");
-
-        if (!button) {
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        const contentId = button.dataset.contentId;
-
-        if (!contentId) {
-            return;
-        }
-
-        button.disabled = true;
-
-        const headers = {};
-
-        if (csrfHeaderName && csrfToken) {
-            headers[csrfHeaderName] = csrfToken;
-        }
-
-        try {
-            const response = await fetch("/api/favorites/content/" + contentId, {
-                method: "POST",
-                headers: headers
-            });
-
-            if (response.status === 401) {
-                showPageError("Необходимо авторизоваться, чтобы добавить контент в избранное.");
-                button.disabled = false;
-                return;
-            }
-
-            if (response.status === 403) {
-                showPageError("Недостаточно прав для изменения избранного.");
-                button.disabled = false;
-                return;
-            }
-
-            if (!response.ok) {
-                showPageError("Не удалось изменить избранное.");
-                button.disabled = false;
-                return;
-            }
-
-            const isFavoriteNow = button.classList.toggle("active");
-
-            button.textContent = isFavoriteNow ? "★" : "☆";
-
-            const title = isFavoriteNow
-                ? "Убрать из избранного"
-                : "Добавить в избранное";
-
-            button.title = title;
-            button.setAttribute("aria-label", title);
-
-            button.disabled = false;
-        } catch (e) {
-            console.error(e);
-            showPageError("Не удалось изменить избранное.");
-            button.disabled = false;
-        }
-    });
-</script>
 
 <#include "/fragments/footer.ftlh">
 </body>

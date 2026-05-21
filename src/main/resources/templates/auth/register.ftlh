@@ -5,241 +5,265 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Регистрация</title>
+    <title>Регистрация — SDevPoint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --bg: #f6f7f9;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --link: #2563eb;
-            --link-hover: #1d4ed8;
-            --danger: #dc2626;
-            --danger-bg: #fef2f2;
-            --danger-border: #fecaca;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        .page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 16px;
-        }
-
-        .register-card {
-            width: 100%;
-            max-width: 440px;
-            padding: 32px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-        }
-
-        .register-title {
-            margin: 0 0 8px;
-            font-size: 30px;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
-            color: #111827;
-        }
-
-        .register-description {
-            margin: 0 0 26px;
-            color: var(--text-muted);
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 7px;
-            font-size: 14px;
-            font-weight: 650;
-            color: #111827;
-        }
-
-        .form-input {
-            width: 100%;
-            min-height: 42px;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #ffffff;
-            color: var(--text-main);
-            font: inherit;
-            font-size: 15px;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
-        }
-
-        .field-error {
-            margin-top: 7px;
-            color: var(--danger);
-            font-size: 14px;
-        }
-
-        .field-error p {
-            margin: 4px 0 0;
-        }
-
-        .global-error {
-            margin-bottom: 18px;
-            padding: 12px 14px;
-            border: 1px solid var(--danger-border);
-            border-radius: 12px;
-            background: var(--danger-bg);
-            color: var(--danger);
-            font-size: 14px;
-        }
-
-        .submit-button {
-            width: 100%;
-            min-height: 42px;
-            border: none;
-            border-radius: 10px;
-            background: var(--link);
-            color: #ffffff;
-            font: inherit;
-            font-size: 15px;
-            font-weight: 650;
-            cursor: pointer;
-        }
-
-        .submit-button:hover {
-            background: var(--link-hover);
-        }
-
-        .login-link {
-            margin-top: 18px;
-            color: var(--text-muted);
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .login-link a {
-            color: var(--link);
-            text-decoration: none;
-        }
-
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 520px) {
-            .register-card {
-                padding: 24px 20px;
-            }
-
-            .register-title {
-                font-size: 26px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
 
-<main class="page">
-    <section class="register-card">
-        <h1 class="register-title">Регистрация</h1>
+<body class="app-body auth-register-page">
+<#include "/fragments/header.ftlh">
 
-        <p class="register-description">
-            Создайте аккаунт. После регистрации нужно будет подтвердить почту.
-        </p>
+<main class="auth-login auth-register">
+    <div class="auth-login__visual" aria-hidden="true">
+        <div class="auth-login__dots auth-login__dots--left"></div>
+        <div class="auth-login__dots auth-login__dots--right"></div>
+        <div class="auth-login__wave auth-login__wave--left"></div>
+        <div class="auth-login__wave auth-login__wave--right"></div>
+        <div class="auth-login__circle"></div>
+    </div>
 
-        <#if error?? && error?has_content>
-            <div class="global-error">
-                ${error}
-            </div>
-        </#if>
+    <section class="auth-login__content auth-register__content">
+        <header class="auth-login__header">
+            <h1 class="auth-login__title">Регистрация</h1>
+            <p class="auth-login__description">
+                Создайте аккаунт, чтобы начать работу с базой знаний.
+            </p>
+        </header>
 
-        <form method="post" action="/auth/register">
-            <#if _csrf??>
-                <input type="hidden"
-                       name="${_csrf.parameterName}"
-                       value="${_csrf.token}">
+        <section class="auth-login-card auth-register-card">
+            <#if error?? && error?has_content>
+                <div class="auth-login-alert auth-login-alert--error">
+                    ${error}
+                </div>
             </#if>
 
-            <div class="form-group">
-                <label class="form-label" for="email">Email</label>
-
-                <input
-                        id="email"
-                        class="form-input"
-                        type="email"
-                        name="email"
-                        value="${(form.email())!''}"
-                        autocomplete="email"
-                        required
-                >
-
-                <@spring.bind "form.email"/>
-                <#if spring.status.error>
-                    <div class="field-error">
-                        <#list spring.status.errorMessages as validationError>
-                            <p>${validationError}</p>
-                        </#list>
-                    </div>
+            <form id="registerForm" method="post" action="/auth/register" novalidate class="auth-login-form">
+                <#if _csrf??>
+                    <input type="hidden"
+                           name="${_csrf.parameterName}"
+                           value="${_csrf.token}">
                 </#if>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label" for="password">Пароль</label>
+                <div class="auth-login-field">
+                    <label class="auth-login-label" for="email">Почта</label>
 
-                <input
-                        id="password"
-                        class="form-input"
-                        type="password"
-                        name="password"
-                        autocomplete="new-password"
-                        required
-                        minlength="4"
-                        maxlength="32"
-                >
+                    <div class="auth-login-input-wrap">
+                        <span class="auth-login-input-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M4 6.75C4 5.78 4.78 5 5.75 5H18.25C19.22 5 20 5.78 20 6.75V17.25C20 18.22 19.22 19 18.25 19H5.75C4.78 19 4 18.22 4 17.25V6.75Z"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linejoin="round"/>
+                                <path d="M5 7L12 12.4L19 7"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"/>
+                            </svg>
+                        </span>
 
-                <@spring.bind "form.password"/>
-                <#if spring.status.error>
-                    <div class="field-error">
-                        <#list spring.status.errorMessages as validationError>
-                            <p>${validationError}</p>
-                        </#list>
+                        <input
+                                id="email"
+                                class="auth-login-input"
+                                type="email"
+                                name="email"
+                                value="${(form.email())!''}"
+                                autocomplete="email"
+                                placeholder="Введите вашу почту"
+                                required
+                        >
                     </div>
-                </#if>
-            </div>
 
-            <button class="submit-button" type="submit">
-                Зарегистрироваться
-            </button>
-        </form>
+                    <@spring.bind "form.email"/>
+                    <#if spring.status.error>
+                        <div class="field-error auth-register-field-error">
+                            <#list spring.status.errorMessages as validationError>
+                                <p>${validationError}</p>
+                            </#list>
+                        </div>
+                    </#if>
+                </div>
 
-        <div class="login-link">
-            Уже есть аккаунт? <a href="/auth/login">Войти</a>
+                <div class="auth-login-field">
+                    <label class="auth-login-label" for="password">Пароль</label>
+
+                    <div class="auth-login-input-wrap">
+                        <span class="auth-login-input-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M7.5 10V8C7.5 5.52 9.52 3.5 12 3.5C14.48 3.5 16.5 5.52 16.5 8V10"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linecap="round"/>
+                                <path d="M6.75 10H17.25C18.22 10 19 10.78 19 11.75V18.25C19 19.22 18.22 20 17.25 20H6.75C5.78 20 5 19.22 5 18.25V11.75C5 10.78 5.78 10 6.75 10Z"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linejoin="round"/>
+                                <path d="M12 14V16"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linecap="round"/>
+                            </svg>
+                        </span>
+
+                        <input
+                                id="password"
+                                class="auth-login-input auth-login-input--password"
+                                type="password"
+                                name="password"
+                                autocomplete="new-password"
+                                placeholder="Введите пароль"
+                                required
+                                minlength="4"
+                                maxlength="32"
+                        >
+
+                        <button
+                                class="auth-login-password-toggle"
+                                type="button"
+                                data-password-toggle-for="password"
+                                aria-label="Показать пароль">
+                            <span class="auth-login-password-toggle__icon auth-login-password-toggle__icon--show" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M3.5 12C5.45 8.65 8.32 7 12 7C15.68 7 18.55 8.65 20.5 12C18.55 15.35 15.68 17 12 17C8.32 17 5.45 15.35 3.5 12Z"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="2.6"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"/>
+                                </svg>
+                            </span>
+                            <span class="auth-login-password-toggle__icon auth-login-password-toggle__icon--hide" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 4L20 20"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linecap="round"/>
+                                    <path d="M8.6 8.1C9.58 7.37 10.71 7 12 7C15.68 7 18.55 8.65 20.5 12C19.82 13.17 19.02 14.13 18.1 14.88"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                    <path d="M15.1 16.45C14.15 16.82 13.12 17 12 17C8.32 17 5.45 15.35 3.5 12C4.26 10.7 5.18 9.66 6.25 8.88"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <@spring.bind "form.password"/>
+                    <#if spring.status.error>
+                        <div class="field-error auth-register-field-error">
+                            <#list spring.status.errorMessages as validationError>
+                                <p>${validationError}</p>
+                            </#list>
+                        </div>
+                    </#if>
+                </div>
+
+                <div class="auth-login-field">
+                    <label class="auth-login-label" for="confirmPassword">Повторите пароль</label>
+
+                    <div class="auth-login-input-wrap">
+                        <span class="auth-login-input-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M7.5 10V8C7.5 5.52 9.52 3.5 12 3.5C14.48 3.5 16.5 5.52 16.5 8V10"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linecap="round"/>
+                                <path d="M6.75 10H17.25C18.22 10 19 10.78 19 11.75V18.25C19 19.22 18.22 20 17.25 20H6.75C5.78 20 5 19.22 5 18.25V11.75C5 10.78 5.78 10 6.75 10Z"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linejoin="round"/>
+                                <path d="M12 14V16"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linecap="round"/>
+                            </svg>
+                        </span>
+
+                        <input
+                                id="confirmPassword"
+                                class="auth-login-input auth-login-input--password"
+                                type="password"
+                                name="confirmPassword"
+                                autocomplete="new-password"
+                                placeholder="Повторите пароль"
+                                required
+                                minlength="4"
+                                maxlength="32"
+                        >
+
+                        <button
+                                class="auth-login-password-toggle"
+                                type="button"
+                                data-password-toggle-for="confirmPassword"
+                                aria-label="Показать пароль">
+                            <span class="auth-login-password-toggle__icon auth-login-password-toggle__icon--show" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M3.5 12C5.45 8.65 8.32 7 12 7C15.68 7 18.55 8.65 20.5 12C18.55 15.35 15.68 17 12 17C8.32 17 5.45 15.35 3.5 12Z"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="2.6"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"/>
+                                </svg>
+                            </span>
+                            <span class="auth-login-password-toggle__icon auth-login-password-toggle__icon--hide" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 4L20 20"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linecap="round"/>
+                                    <path d="M8.6 8.1C9.58 7.37 10.71 7 12 7C15.68 7 18.55 8.65 20.5 12C19.82 13.17 19.02 14.13 18.1 14.88"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                    <path d="M15.1 16.45C14.15 16.82 13.12 17 12 17C8.32 17 5.45 15.35 3.5 12C4.26 10.7 5.18 9.66 6.25 8.88"
+                                          stroke="currentColor"
+                                          stroke-width="1.8"
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div id="confirmPasswordClientError" class="field-error auth-register-field-error" hidden>
+                        <p>Пароли не совпадают</p>
+                    </div>
+
+                    <@spring.bind "form.confirmPassword"/>
+                    <#if spring.status.error>
+                        <div class="field-error auth-register-field-error">
+                            <#list spring.status.errorMessages as validationError>
+                                <p>${validationError}</p>
+                            </#list>
+                        </div>
+                    </#if>
+                </div>
+
+                <button class="auth-login-submit" type="submit">
+                    Зарегистрироваться
+                </button>
+            </form>
+        </section>
+
+        <div class="auth-login-register">
+            <span>Уже есть аккаунт?</span>
+            <a href="/auth/login">Войти</a>
         </div>
     </section>
 </main>
 
+<script src="/js/register.js"></script>
+
+<#include "/fragments/footer.ftlh">
 </body>
 </html>
