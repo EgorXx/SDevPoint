@@ -23,15 +23,20 @@ spring:
 
   mail:
     host: smtp.gmail.com
-    port: 587
+    port: 465
     username: ${EMAIL}
     password: ${MAIL_SMTP_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
+          starttls:
+            enable: false
+          connectiontimeout: 5000
+          timeout: 10000
+          writetimeout: 5000
 
   liquibase:
     change-log: classpath:/migrations/changelog/changelog-root.yml

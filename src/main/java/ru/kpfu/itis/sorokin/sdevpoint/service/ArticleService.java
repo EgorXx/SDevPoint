@@ -244,6 +244,10 @@ public class ArticleService {
     }
 
     private void checkArticleViewAccess(ContentItem contentItem, Long userId) {
+        if (isAdmin(userId)) {
+            return;
+        }
+
         ContentStatus status = contentItem.getContentStatus();
 
         switch (status) {
@@ -282,6 +286,13 @@ public class ArticleService {
 
             default -> throw new NotFoundException(ARTICLE_NOT_FOUND_MESSAGE);
         }
+    }
+
+    public boolean isAdmin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(CurrentUserNotFoundException::new);
+
+        return user.getRole() == Role.ROLE_ADMIN;
     }
 
     public boolean isOwner(ContentItem contentItem, Long userId) {

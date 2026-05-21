@@ -283,6 +283,10 @@ public class CaseService {
     }
 
     private void checkCaseViewAccess(ContentItem contentItem, Long userId) {
+        if (isAdmin(userId)) {
+            return;
+        }
+
         ContentStatus status = contentItem.getContentStatus();
 
         switch (status) {
@@ -303,6 +307,13 @@ public class CaseService {
 
             default -> throw new NotFoundException(CASE_NOT_FOUND_MESSAGE);
         }
+    }
+
+    public boolean isAdmin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(CurrentUserNotFoundException::new);
+
+        return user.getRole() == Role.ROLE_ADMIN;
     }
 
     private void checkCaseEditAccess(ContentItem contentItem, Long userId) {
