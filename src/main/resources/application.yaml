@@ -63,6 +63,10 @@ app:
     cleanup-drafts-cron: "0 */2 * * * * "
     cleanup-images-cron: "0 */2 * * * * "
 
+  clean-content:
+    limit-empty-draft: 1d
+    limit-saved-draft: 3d
+
   content-view:
     date-format: "dd.MM.yyyy HH:mm"
     timezone: "Europe/Moscow"
@@ -151,6 +155,13 @@ app:
     ai-summary:
       cache-name: "aiSummary"
       ttl: 1h
+
+  bootstrap:
+    admin:
+      enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+      username: ${BOOTSTRAP_ADMIN_USERNAME:}
+      email: ${BOOTSTRAP_ADMIN_EMAIL:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
 
 mail:
   sender: SDevPoint

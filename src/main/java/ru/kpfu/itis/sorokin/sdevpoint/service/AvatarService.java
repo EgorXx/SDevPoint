@@ -11,12 +11,19 @@ import java.security.SecureRandom;
 public class AvatarService {
     private final AvatarProperties avatarProperties;
     private final SecureRandom random = new SecureRandom();
+    private static final int ADMIN_AVATAR = 999;
 
     public String getRandomAvatarKey() {
         int avatarNumber = random.nextInt(avatarProperties.count()) + 1;
 
         return avatarProperties.filePrefix()
                 + avatarNumber
+                +avatarProperties.extension();
+    }
+
+    public String getAdminAvatarKey() {
+        return avatarProperties.filePrefix()
+                + ADMIN_AVATAR
                 +avatarProperties.extension();
     }
 

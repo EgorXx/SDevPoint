@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
+import ru.kpfu.itis.sorokin.sdevpoint.properties.CleanContentProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 
 import java.time.Duration;
@@ -17,16 +18,14 @@ import java.util.List;
 public class DraftCleanupService {
     private final ContentItemRepository contentItemRepository;
     private final DraftDeletionService draftDeletionService;
-
-    private static final Duration LIMIT_EMPTY_DRAFT = Duration.ofMinutes(1);
-    private static final Duration LIMIT_SAVED_DRAFT = Duration.ofMinutes(2);
+    private final CleanContentProperties cleanContentProperties;
 
     @Transactional
     public void cleanupExpiredDrafts() {
         Instant now = Instant.now();
 
-        Instant emptyDraftDeadline = now.minus(LIMIT_EMPTY_DRAFT);
-        Instant savedDraftDeadline = now.minus(LIMIT_SAVED_DRAFT);
+        Instant emptyDraftDeadline = now.minus(cleanContentProperties.limitEmptyDraft());
+        Instant savedDraftDeadline = now.minus(cleanContentProperties.limitSavedDraft());
 
         List<ContentItem> expiredDrafts = contentItemRepository.findExpiredDrafts(
                 emptyDraftDeadline,
