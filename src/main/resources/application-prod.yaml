@@ -4,9 +4,6 @@ spring:
       max-file-size: 7MB
       max-request-size: 7MB
 
-  config:
-    import: optional:file:.env[.properties]
-
   application:
     name: sdevpoint
 
@@ -19,7 +16,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
 
   mail:
     host: smtp.gmail.com

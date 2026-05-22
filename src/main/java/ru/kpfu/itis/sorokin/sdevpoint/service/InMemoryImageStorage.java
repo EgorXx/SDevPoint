@@ -30,7 +30,7 @@ public class InMemoryImageStorage implements ImageStorage {
             UUID imageId,
             String extension) {
 
-        String storageKey =  FILE_PREFIX + "%d/%s%s"
+        String storageKey = FILE_PREFIX + "%d/%s%s"
                 .formatted(contentItemId, imageId, extension);
 
         Path targetPath = root.resolve(storageKey).normalize();

@@ -6,6 +6,8 @@ services:
     volumes:
       - redis-data:/data
     command: [ "redis-server", "--appendonly", "yes" ]
+    networks:
+      - my_network
 
   db:
     image: postgres:17
