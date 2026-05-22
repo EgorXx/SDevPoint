@@ -122,7 +122,7 @@ public class ArticleService {
 
         return new ArticleView(
                 contentItem.getId(),
-                contentItem.getTitle(),
+                contentViewService.resolveContentTitle(contentItem.getTitle()),
                 contentItem.getOwner().getUsername(),
                 markdownRenderService.renderToSafeHtml(article.getText()),
                 contentViewService.formatDate(contentItem.getCreatedAt()),

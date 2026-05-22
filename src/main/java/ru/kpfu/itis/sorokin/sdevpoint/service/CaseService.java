@@ -139,7 +139,7 @@ public class CaseService {
 
         return new CaseView(
                 contentItem.getId(),
-                contentItem.getTitle(),
+                contentViewService.resolveContentTitle(contentItem.getTitle()),
                 contentItem.getOwner().getUsername(),
                 markdownRenderService.renderToSafeHtml(caseEntity.getDescription()),
                 !caseEntity.getSolution().isEmpty(),

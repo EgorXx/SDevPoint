@@ -2,6 +2,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownTextParser;
 import ru.kpfu.itis.sorokin.sdevpoint.properties.ContentViewProperties;
 
@@ -22,5 +23,9 @@ public class ContentViewService {
 
     public String formatPreviewFromText(String text) {
         return markdownTextParser.parse(text, contentViewProperties.previewSize());
+    }
+
+    public String resolveContentTitle(String title) {
+        return ContentItem.isGenerateTitle(title) ? "Нет названия" : title;
     }
 }

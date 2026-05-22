@@ -17,7 +17,7 @@ public class ContentCardMapper {
                 contentItem.getId(),
                 contentItem.getItemType().toString(),
                 resolveUsername(currentUserId, contentItem.getOwner()),
-                contentItem.getTitle(),
+                contentViewService.resolveContentTitle(contentItem.getTitle()),
                 contentItem.getPreview(),
                 contentViewService.formatDate(contentItem.getCreatedAt()),
                 contentItem.getContentStatus().toString(),
@@ -28,4 +28,5 @@ public class ContentCardMapper {
     private String resolveUsername(Long userId, User owner) {
         return owner.getId().equals(userId) ? "ВЫ" : owner.getUsername();
     }
+
 }
