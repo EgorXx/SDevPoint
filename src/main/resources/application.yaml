@@ -12,9 +12,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/sdevpoint
-    password: qwerty007
-    username: postgres
+    url: ${DB_URL}
+    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME}
 
   jpa:
     hibernate:
@@ -44,8 +44,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   cache:
     type: redis
@@ -63,9 +63,13 @@ app:
     cleanup-drafts-cron: "0 */2 * * * * "
     cleanup-images-cron: "0 */2 * * * * "
 
-  clean-content:
-    limit-empty-draft: 1d
-    limit-saved-draft: 3d
+  clean:
+    content:
+      limit-empty-draft: 1d
+      limit-saved-draft: 3d
+    image:
+      limit-tasks: 10
+      limit-attempts: 2
 
   content-view:
     date-format: "dd.MM.yyyy HH:mm"
@@ -79,7 +83,7 @@ app:
     extension: ".png"
 
   image-storage:
-    path: "storage/images"
+    path: ${IMAGE_STORAGE_PATH:storage/images}
 
   content:
     limits:
@@ -167,7 +171,7 @@ mail:
   sender: SDevPoint
   from: ${EMAIL}
   subject: "Please confirm your email"
-  base-url: http://localhost:8080
+  base-url: ${APP_BASE_URL:http://localhost:8080}
 
 management:
   endpoints:

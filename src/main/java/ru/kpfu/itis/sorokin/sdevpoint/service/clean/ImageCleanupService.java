@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTask;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.StorageDeletionTaskStatus;
+import ru.kpfu.itis.sorokin.sdevpoint.properties.CleanImageProperties;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.StorageDeletionTaskRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.service.ImageStorage;
 
@@ -17,8 +18,7 @@ import java.util.List;
 public class ImageCleanupService {
     private final StorageDeletionTaskRepository storageDeletionTaskRepository;
     private final ImageStorage imageStorage;
-    private static final int LIMIT = 10;
-    private static final int LIMIT_ATTEMPTS = 2;
+    private final CleanImageProperties cleanImageProperties;
 
     @Transactional
     public void cleanImages() {
@@ -28,7 +28,7 @@ public class ImageCleanupService {
                                 StorageDeletionTaskStatus.NEW.name(),
                                 StorageDeletionTaskStatus.FAILED.name()
                         ),
-                        LIMIT
+                        cleanImageProperties.limitTasks()
                 );
 
         for (StorageDeletionTask task : tasks) {
@@ -37,7 +37,7 @@ public class ImageCleanupService {
     }
 
     private void processTask(StorageDeletionTask task) {
-        if (task.getAttempts() >= LIMIT_ATTEMPTS) {
+        if (task.getAttempts() >= cleanImageProperties.limitAttempts()) {
             task.markDead();
             log.warn(
                     "Storage deletion task marked as DEAD, taskId={}, storageKey={}, targetType={}, attempts={}",
