@@ -310,6 +310,8 @@ public class CaseService {
     }
 
     public boolean isAdmin(Long userId) {
+        if (userId == null) {return false;}
+
         User user = userRepository.findById(userId)
                 .orElseThrow(CurrentUserNotFoundException::new);
 
