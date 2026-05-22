@@ -2,6 +2,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.Hibernate;
 
 import java.time.Instant;
 
@@ -74,5 +75,29 @@ public class StorageDeletionTask {
     public void markDead() {
         this.taskStatus = StorageDeletionTaskStatus.DEAD;
         this.updatedAt = Instant.now();
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        StorageDeletionTask that = (StorageDeletionTask) o;
+
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

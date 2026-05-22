@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.Hibernate;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -33,6 +34,30 @@ public class EmailVerification {
     public void refresh(Instant newExpiresAt, UUID newToken) {
         this.token = newToken;
         this.expiresAt = newExpiresAt;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        EmailVerification that = (EmailVerification) o;
+
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 
 }

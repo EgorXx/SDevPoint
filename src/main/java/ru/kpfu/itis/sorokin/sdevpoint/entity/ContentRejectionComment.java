@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.Hibernate;
 
 import java.time.Instant;
 
@@ -49,5 +50,29 @@ public class ContentRejectionComment {
     public void updateComment(String comment) {
         this.comment = comment;
         this.createdAt = Instant.now();
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        ContentRejectionComment that = (ContentRejectionComment) o;
+
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 @Entity
 @Table(
@@ -40,5 +41,29 @@ public class Reaction {
         this.user = user;
         this.contentItem = contentItem;
         this.reactionType = reactionType;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        Reaction reaction = (Reaction) o;
+
+        return id != null && id.equals(reaction.id);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 }

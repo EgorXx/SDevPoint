@@ -2,6 +2,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.Hibernate;
 
 @Entity
 @Table(
@@ -29,4 +30,28 @@ public class Favorite {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        Favorite favorite = (Favorite) o;
+
+        return id != null && id.equals(favorite.id);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Hibernate.getClass(this).hashCode();
+    }
 }

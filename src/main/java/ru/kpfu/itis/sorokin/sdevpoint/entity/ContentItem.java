@@ -3,6 +3,7 @@ package ru.kpfu.itis.sorokin.sdevpoint.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.Hibernate;
 
 import java.time.Instant;
 import java.util.List;
@@ -10,18 +11,10 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "content_item",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "unique_title_by_user",
-                        columnNames = {"user_id", "title"}
-                )
-        }
-)
+@Table(name = "content_item")
 public class ContentItem {
     private static final String DRAFT_TITLE_PREFIX = "__draft__";
     private static final String EMPTY_PREVIEW = "";
@@ -91,6 +84,30 @@ public class ContentItem {
         if (title == null) {return false;}
 
         return title.startsWith(DRAFT_TITLE_PREFIX);
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+
+        ContentItem that = (ContentItem) o;
+
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Hibernate.getClass(this).hashCode();
     }
 
 }
