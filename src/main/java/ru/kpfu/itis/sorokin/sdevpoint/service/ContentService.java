@@ -16,6 +16,7 @@ import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentStatus;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
+import ru.kpfu.itis.sorokin.sdevpoint.mapper.ContentCardMapper;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentItemRepository;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.ContentRejectionCommentRepository;
 
@@ -27,6 +28,7 @@ public class ContentService {
     private final ContentItemRepository contentItemRepository;
     private final ContentViewService contentViewService;
     private final ContentRejectionCommentRepository contentRejectionCommentRepository;
+    private final ContentCardMapper contentCardMapper;
 
     @Transactional(readOnly = true)
     public ContentPageView getMyContent(Long userId, int page, int size) {
@@ -45,16 +47,8 @@ public class ContentService {
         );
 
         List<ContentCardView> cards = contentItems
-                .map(contentItem -> new ContentCardView(
-                        contentItem.getId(),
-                        contentItem.getItemType().toString(),
-                        getOwner(userId, contentItem.getOwner()),
-                        contentItem.getTitle(),
-                        contentItem.getPreview(),
-                        contentViewService.formatDate(contentItem.getCreatedAt()),
-                        contentItem.getContentStatus().toString(),
-                        contentItem.getVisibility().toString()
-                ))
+                .map(contentItem ->
+                        contentCardMapper.toView(contentItem, userId))
                 .toList();
 
         return new ContentPageView(
@@ -66,10 +60,6 @@ public class ContentService {
                 contentItems.hasPrevious(),
                 contentItems.hasNext()
         );
-    }
-
-    private String getOwner(Long userId, User owner) {
-        return owner.getId().equals(userId) ? "ВЫ" : owner.getUsername();
     }
 
     @Transactional
@@ -161,16 +151,8 @@ public class ContentService {
                 .findByContentStatus(ContentStatus.PENDING_REVIEW, pageable);
 
         List<ContentCardView> cards = contentItems
-                .map(contentItem -> new ContentCardView(
-                        contentItem.getId(),
-                        contentItem.getItemType().toString(),
-                        contentItem.getOwner().getUsername(),
-                        contentItem.getTitle(),
-                        contentItem.getPreview(),
-                        contentViewService.formatDate(contentItem.getCreatedAt()),
-                        contentItem.getContentStatus().toString(),
-                        contentItem.getVisibility().toString()
-                ))
+                .map(contentItem ->
+                        contentCardMapper.toView(contentItem, userId))
                 .toList();
 
         return new ContentPageView(
