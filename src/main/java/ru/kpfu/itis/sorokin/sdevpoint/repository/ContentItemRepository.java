@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ContentItemRepository extends JpaRepository<ContentItem, Long> {
+public interface ContentItemRepository
+        extends JpaRepository<ContentItem, Long>, ContentItemCustomRepository {
     @Query("""
                 select c
                 from ContentItem c
@@ -52,9 +53,6 @@ public interface ContentItemRepository extends JpaRepository<ContentItem, Long> 
 
     @EntityGraph(attributePaths = "owner")
     Optional<ContentItem> findWithOwnerById(Long id);
-
-    @EntityGraph(attributePaths = "owner")
-    Page<ContentItem> findByOwnerId(Long userId, Pageable pageable);
 
     @Query("""
     SELECT c
