@@ -13,7 +13,6 @@ import ru.kpfu.itis.sorokin.sdevpoint.dto.ContentRejectionCommentView;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentItem;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentRejectionComment;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.ContentStatus;
-import ru.kpfu.itis.sorokin.sdevpoint.entity.User;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.BadRequestException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.mapper.ContentCardMapper;
@@ -26,7 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ContentService {
     private final ContentItemRepository contentItemRepository;
-    private final ContentViewService contentViewService;
     private final ContentRejectionCommentRepository contentRejectionCommentRepository;
     private final ContentCardMapper contentCardMapper;
 

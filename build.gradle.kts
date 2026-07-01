@@ -3,6 +3,7 @@ plugins {
 	id("org.springframework.boot") version "4.0.5"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.openapi.generator") version "7.22.0"
+	jacoco
 }
 
 group = "ru.kpfu.itis.sorokin"
@@ -16,6 +17,10 @@ java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(25)
 	}
+}
+
+jacoco {
+	toolVersion = "0.8.14"
 }
 
 repositories {
@@ -52,10 +57,30 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.withType()
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
 
-tasks.withType<Test> {
+	reports {
+		html.required = true
+		xml.required = false
+	}
+
+	classDirectories.setFrom(
+		sourceSets.main.get().output.asFileTree.matching {
+			exclude(
+				"**/dto/**",
+				"**/exception/**",
+				"**/config/**",
+				"**/generated/**",
+				"**/SdevpointApplication*"
+			)
+		}
+	)
+}
+
+tasks.test {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("openApiGenerateImage") {

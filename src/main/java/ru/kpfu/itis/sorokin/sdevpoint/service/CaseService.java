@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.kpfu.itis.sorokin.sdevpoint.dto.*;
 import ru.kpfu.itis.sorokin.sdevpoint.entity.*;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.CurrentUserNotFoundException;
-import ru.kpfu.itis.sorokin.sdevpoint.exception.ForbiddenException;
 import ru.kpfu.itis.sorokin.sdevpoint.exception.NotFoundException;
 import ru.kpfu.itis.sorokin.sdevpoint.markdown.MarkdownRenderService;
 import ru.kpfu.itis.sorokin.sdevpoint.repository.*;
